@@ -51,8 +51,12 @@ int main(int argc, char **argv) {
 		cl::Program program(context, sources);
 
 		timer::Start();
-		char* inFile = winfr::Read("./data/temp_lincolnshire.txt");
-		std::cout << "time (microseconds): " << timer::QueryMicroseconds() << std::endl;
+
+		unsigned int len;
+		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
+		float* out = winstr::parse_lines(inFile, len, ' ', 4, 1800000);
+
+		std::cout << "time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
 		try
 		{
