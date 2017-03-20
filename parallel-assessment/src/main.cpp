@@ -41,7 +41,7 @@ int main(int argc, char **argv) {
 	try
 	{
 		cl::Context context = GetContext(platform_id, device_id);
-		std::cout << "Runinng on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
+		std::cout << "Running on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
 
 		cl::CommandQueue queue(context);
 
@@ -54,8 +54,9 @@ int main(int argc, char **argv) {
 
 		unsigned int len;
 		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
-		double* out = winstr::parse_lines(inFile, len, ' ', 5, 1873106);
+		std::cout << "\nTime Taken (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
+		double* out = winstr::parse_lines(inFile, len, ' ', 5, 1873106);
 		std::cout << "\nTime Taken (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
 		try

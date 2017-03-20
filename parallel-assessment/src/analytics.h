@@ -3,19 +3,17 @@
 
 #include <chrono>
 
-using namespace std::chrono;
-
 namespace timer
 {
-	time_point<steady_clock> start;
+	std::chrono::time_point<std::chrono::steady_clock> start;
 
-	void Start() { start = high_resolution_clock::now(); }
-	void Stop() { start = time_point<steady_clock>(); }
+	void Start() { start = std::chrono::high_resolution_clock::now(); }
+	void Stop() { start = std::chrono::time_point<std::chrono::steady_clock>(); }
 	void Reset() { Start(); }
-	int QuerySeconds() { return duration_cast<seconds>(high_resolution_clock::now() - start).count(); }
-	int QueryMilliseconds() { return duration_cast<milliseconds>(high_resolution_clock::now() - start).count(); }
-	int QueryMicroseconds() { return duration_cast<microseconds>(high_resolution_clock::now() - start).count(); }
-	int QueryNanoseconds() { return duration_cast<nanoseconds>(high_resolution_clock::now() - start).count(); }
+	int QuerySeconds() { return std::chrono::duration_cast<std::chrono::seconds>(std::chrono::high_resolution_clock::now() - start).count(); }
+	int QueryMilliseconds() { return std::chrono::duration_cast<std::chrono::milliseconds>(std::chrono::high_resolution_clock::now() - start).count(); }
+	int QueryMicroseconds() { return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::high_resolution_clock::now() - start).count(); }
+	int QueryNanoseconds() { return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count(); }
 }
 
 #endif
