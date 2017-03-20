@@ -41,6 +41,20 @@ double parse_float(const char*& data, unsigned int len, char delimiter, unsigned
 
 namespace winstr
 {
+	unsigned int query_line_count(const char* dir)
+	{
+		char c; unsigned int size = 0;
+		ifstream file(dir);
+
+		while (file.get(c))
+		{
+			if (c == '\n')
+				size++;
+		}
+
+		return size;
+	}
+
 	char* read_optimal(const char* dir, unsigned int& len)
 	{
 		HANDLE hFile = CreateFile(dir, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
@@ -76,14 +90,14 @@ namespace winstr
 		return ReadBuffer;
 	}
 
-	double* read_fscanf(const char* dir, unsigned int lineCount)
+	double* read_fscanf(const char* dir, unsigned int size)
 	{
-		double* values = new double[lineCount];
+		double* values = new double[size];
 
 		FILE* stream = fopen(dir, "r");
 		fseek(stream, 0L, SEEK_SET);
 
-		for (unsigned int i = 0; i < lineCount; i++)
+		for (unsigned int i = 0; i < size; i++)
 			fscanf(stream, "%*s %*lf %*lf %*lf %*lf %d", &values[i]);
 
 		fclose(stream);
