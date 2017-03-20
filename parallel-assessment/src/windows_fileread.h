@@ -22,10 +22,10 @@ unsigned int ComputeBytes(const char* dir)
 	return fileStatus.st_size - 1;
 }
 
-float parse_float(const char* data, unsigned int len, char delimiter, unsigned int& index)
+double parse_float(const char*& data, unsigned int len, char delimiter, unsigned int& index, int accuracy)
 {
 	short buffer_index = 0;
-	char* buffer = new char[4];
+	char* buffer = new char[accuracy];
 
 	for (index; index < len; index++)
 	{
@@ -76,24 +76,24 @@ namespace winstr
 		return ReadBuffer;
 	}
 
-	float* read_fscanf(const char* dir, unsigned int lineCount)
+	double* read_fscanf(const char* dir, unsigned int lineCount)
 	{
-		float* values = new float[lineCount];
+		double* values = new double[lineCount];
 
 		FILE* stream = fopen(dir, "r");
 		fseek(stream, 0L, SEEK_SET);
 
 		for (unsigned int i = 0; i < lineCount; i++)
-			fscanf(stream, "%*s %*lf %*lf %*lf %*lf %f", &values[i]);
+			fscanf(stream, "%*s %*lf %*lf %*lf %*lf %d", &values[i]);
 
 		return values;
 	}
 
-	float* parse_lines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
+	double* parse_lines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
 		unsigned char current_column = 0;
 		unsigned int index = 0;
-		float* out_data = new float[size];
+		double* out_data = new double[size];
 
 		for (unsigned int i = 0; i < len; i++)
 		{
@@ -105,7 +105,7 @@ namespace winstr
 				if (index == size)
 					break;
 
-				out_data[index++] = parse_float(data, len, delimiter, ++i);
+				out_data[index++] = parse_float(data, len, delimiter, ++i, 4);
 				current_column = 0;
 			}
 		}
