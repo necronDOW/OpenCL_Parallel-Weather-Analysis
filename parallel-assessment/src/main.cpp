@@ -1,9 +1,7 @@
 #define CL_USE_DEPRECATED_OPENCL_1_2_APIS
 #define __CL_ENABLE_EXCEPTIONS
 
-#include <iostream>
 #include <vector>
-#include <chrono>
 
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
@@ -52,12 +50,18 @@ int main(int argc, char **argv) {
 
 		timer::Start();
 
+#ifdef _DEBUG
+		std::cout << "Build_Mode=Debug" << std::endl;
+#else
+		std::cout << "Build_Mode=Release" << std::endl;
+#endif
+
 		unsigned int len;
 		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
-		std::cout << "\nTime Taken (milliseconds): " << timer::QueryMilliseconds() << std::endl;
+		std::cout << "\nRead Time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
 		double* out = winstr::parse_lines(inFile, len, ' ', 5, 1873106);
-		std::cout << "\nTime Taken (milliseconds): " << timer::QueryMilliseconds() << std::endl;
+		std::cout << "\nParse Time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
 		try
 		{
@@ -104,9 +108,6 @@ int main(int argc, char **argv) {
 		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
 
 		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
-
-		std::cout << "A = " << A << std::endl;
-		std::cout << "B = " << B << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

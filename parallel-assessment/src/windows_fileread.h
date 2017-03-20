@@ -24,18 +24,12 @@ unsigned int ComputeBytes(const char* dir)
 
 double parse_float(const char*& data, unsigned int len, char delimiter, unsigned int& index, int accuracy)
 {
-	short buffer_index = 0;
 	char* buffer = new char[accuracy];
-
-	for (index; index < len; index++)
-	{
-		if (data[index] == delimiter || (data[index] == '\r' || data[index] == '\n'))
-			break;
-		else buffer[buffer_index++] = data[index];
-	}
+	for (int i = 0; i < accuracy; i++)
+		buffer[i] = data[index++];
 
 	index++;
-	try { return stof(buffer); }
+	try { return atof(buffer); }
 	catch (...) { return NULL; }
 }
 
