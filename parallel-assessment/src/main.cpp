@@ -56,7 +56,7 @@ int main(int argc, char **argv) {
 		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
 		double* out = winstr::parse_lines(inFile, len, ' ', 5, 1873106);
 
-		std::cout << "time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
+		std::cout << "\nTime Taken (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
 		try
 		{

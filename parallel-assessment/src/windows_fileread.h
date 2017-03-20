@@ -10,7 +10,7 @@ unsigned int g_BytesTransferred = 0;
 
 VOID CALLBACK FileIOCompletionRoutine(__in  DWORD dwErrorCode, __in  DWORD dwNumberOfBytesTransfered, __in  LPOVERLAPPED lpOverlapped)
 {
-	std::cout << "Number of bytes=" << dwNumberOfBytesTransfered << std::endl;
+	//std::cout << "Number of bytes=" << dwNumberOfBytesTransfered << std::endl;
 	g_BytesTransferred = dwNumberOfBytesTransfered;
 }
 
@@ -57,6 +57,8 @@ namespace winstr
 
 	char* read_optimal(const char* dir, unsigned int& len)
 	{
+		std::cout << "Reading (dir='" << dir << "') ..." << std::endl;
+
 		HANDLE hFile = CreateFile(dir, GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL | FILE_FLAG_OVERLAPPED, NULL);
 		if (hFile == INVALID_HANDLE_VALUE)
 		{
@@ -106,6 +108,8 @@ namespace winstr
 
 	double* parse_lines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
+		std::cout << "Parsing (size=" << size << ") ..." << std::endl;
+
 		unsigned char current_column = 0;
 		unsigned int index = 0;
 		double* out_data = new double[size];
