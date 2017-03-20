@@ -86,6 +86,7 @@ namespace winstr
 		for (unsigned int i = 0; i < lineCount; i++)
 			fscanf(stream, "%*s %*lf %*lf %*lf %*lf %d", &values[i]);
 
+		fclose(stream);
 		return values;
 	}
 
