@@ -15,6 +15,23 @@
 
 using namespace std::chrono;
 
+//int welfords_variance(int data[], int size)
+//{
+//	int N = 0;
+//	int mean = 0;
+//	unsigned int M2 = 0;
+//
+//	for (int i = 0; i < size; i++)
+//	{
+//		N++;
+//		int delta = data[i] - mean;
+//		mean += (delta / N);
+//		M2 += delta*delta;
+//	}
+//
+//	return M2 / (N - 1);
+//}
+
 void print_help() {
 	std::cerr << "Application usage:" << std::endl;
 
