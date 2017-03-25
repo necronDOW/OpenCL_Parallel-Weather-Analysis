@@ -22,13 +22,17 @@ unsigned int ComputeBytes(const char* dir)
 	return fileStatus.st_size - 1;
 }
 
-double parse_float(const char*& data, unsigned int len, char delimiter, unsigned int& index, int accuracy)
+double parse_float(const char*& data, unsigned int len, unsigned int& index, int max_len)
 {
-	char* buffer = new char[accuracy];
-	for (int i = 0; i < accuracy; i++)
-		buffer[i] = data[index++];
+	char* buffer = new char[max_len];
+	for (int i = 0; i < max_len; i++)
+	{
+		if (data[index] == '\n')
+			break;
 
-	index++;
+		buffer[i] = data[index++];
+	}
+
 	try { return atof(buffer); }
 	catch (...) { return NULL; }
 }
@@ -118,7 +122,7 @@ namespace winstr
 				if (index == size)
 					break;
 
-				out_data[index++] = parse_float(data, len, delimiter, ++i, 4);
+				out_data[index++] = parse_float(data, len, ++i, 5);
 				current_column = 0;
 			}
 		}

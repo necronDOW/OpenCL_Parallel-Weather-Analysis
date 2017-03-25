@@ -48,20 +48,20 @@ int main(int argc, char **argv) {
 
 		cl::Program program(context, sources);
 
-		timer::Start();
-
 #ifdef _DEBUG
 		std::cout << "Build_Mode=Debug" << std::endl;
 #else
 		std::cout << "Build_Mode=Release" << std::endl;
 #endif
 
+		timer::Start();
 		unsigned int len;
 		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
 		std::cout << "\nRead Time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
 
 		double* out = winstr::parse_lines(inFile, len, ' ', 5, 1873106);
 		std::cout << "\nParse Time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
+		timer::Stop();
 
 		try
 		{
