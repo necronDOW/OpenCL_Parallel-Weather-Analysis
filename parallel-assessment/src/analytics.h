@@ -25,14 +25,16 @@ namespace timer
 	void Stop() { start = std::chrono::time_point<std::chrono::steady_clock>(); }
 	void Reset() { Start(); }
 
-	unsigned long QueryNanoseconds() {
+	unsigned long QueryNanoseconds()
+	{
 		unsigned long new_query = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
 		since_last = new_query - last_query;
 		last_query = new_query;
 
 		return new_query;
 	}
-	unsigned long QueryNanosecondsSinceLast() {
+	unsigned long QueryNanosecondsSinceLast()
+	{
 		QueryNanoseconds();
 		return since_last;
 	}

@@ -12,33 +12,31 @@
 #include <CL/cl.hpp>
 #endif
 
-using namespace std;
-
 template <typename T>
-ostream& operator<< (ostream& out, const vector<T>& v) {
+std::ostream& operator<< (std::ostream& out, const std::vector<T>& v) {
 	if (!v.empty()) {
 		out << '[';
-		copy(v.begin(), v.end(), ostream_iterator<T>(out, ", "));
+		copy(v.begin(), v.end(), std::ostream_iterator<T>(out, ", "));
 		out << "\b\b]";
 	}
 	return out;
 }
 
-string GetPlatformName(int platform_id) {
-	vector<cl::Platform> platforms;
+std::string GetPlatformName(int platform_id) {
+	std::vector<cl::Platform> platforms;
 	cl::Platform::get(&platforms);
 	return platforms[platform_id].getInfo<CL_PLATFORM_NAME>();
 }
 
-string GetDeviceName(int platform_id, int device_id) {
-	vector<cl::Platform> platforms;
+std::string GetDeviceName(int platform_id, int device_id) {
+	std::vector<cl::Platform> platforms;
 	cl::Platform::get(&platforms);
-	vector<cl::Device> devices;
+	std::vector<cl::Device> devices;
 	platforms[platform_id].getDevices((cl_device_type)CL_DEVICE_TYPE_ALL, &devices);
 	return devices[device_id].getInfo<CL_DEVICE_NAME>();
 }
 
-const string kernel_path = "./src/kernels/";
+const std::string kernel_path = "./src/kernels/";
 
 const char *getErrorString(cl_int error) {
 	switch (error){
@@ -118,39 +116,39 @@ const char *getErrorString(cl_int error) {
 
 void CheckError(cl_int error) {
 	if (error != CL_SUCCESS) {
-		cerr << "OpenCL call failed with error " << getErrorString(error) << endl;
+		std::cerr << "OpenCL call failed with error " << getErrorString(error) << std::endl;
 		exit(1);
 	}
 }
 
-void AddSources(cl::Program::Sources& sources, const string& file_name) {
+void AddSources(cl::Program::Sources& sources, const std::string& file_name) {
 	//TODO: add file existence check
-	ifstream file(kernel_path + file_name);
-	string* source_code = new string(istreambuf_iterator<char>(file), (istreambuf_iterator<char>()));
-	sources.push_back(make_pair((*source_code).c_str(), source_code->length() + 1));
+	std::ifstream file(kernel_path + file_name);
+	std::string* source_code = new std::string(std::istreambuf_iterator<char>(file), (std::istreambuf_iterator<char>()));
+	sources.push_back(std::make_pair((*source_code).c_str(), source_code->length() + 1));
 }
 
-string ListPlatformsDevices() {
+std::string ListPlatformsDevices() {
 
-	stringstream sstream;
-	vector<cl::Platform> platforms;
+	std::stringstream sstream;
+	std::vector<cl::Platform> platforms;
 
 	cl::Platform::get(&platforms);
 
-	sstream << "Found " << platforms.size() << " platform(s):" << endl;
+	sstream << "Found " << platforms.size() << " platform(s):" << std::endl;
 
 	for (unsigned int i = 0; i < platforms.size(); i++)
 	{
 		sstream << "\nPlatform " << i << ", " << platforms[i].getInfo<CL_PLATFORM_NAME>() << ", version: " << platforms[i].getInfo<CL_PLATFORM_VERSION>();
 
-		sstream << ", vendor: " << platforms[i].getInfo<CL_PLATFORM_VENDOR>() << endl;
+		sstream << ", vendor: " << platforms[i].getInfo<CL_PLATFORM_VENDOR>() << std::endl;
 		//		sstream << ", extensions: " << platforms[i].getInfo<CL_PLATFORM_EXTENSIONS>() << endl;
 
-		vector<cl::Device> devices;
+		std::vector<cl::Device> devices;
 
 		platforms[i].getDevices((cl_device_type)CL_DEVICE_TYPE_ALL, &devices);
 
-		sstream << "\n   Found " << devices.size() << " device(s):" << endl;
+		sstream << "\n   Found " << devices.size() << " device(s):" << std::endl;
 
 		for (unsigned int j = 0; j < devices.size(); j++)
 		{
@@ -172,22 +170,22 @@ string ListPlatformsDevices() {
 			sstream << ", max memory size [B]: " << devices[j].getInfo<CL_DEVICE_GLOBAL_MEM_SIZE>();
 			sstream << ", max allocatable memory [B]: " << devices[j].getInfo<CL_DEVICE_MAX_MEM_ALLOC_SIZE>();
 
-			sstream << endl;
+			sstream << std::endl;
 		}
 	}
-	sstream << "----------------------------------------------------------------" << endl;
+	sstream << "----------------------------------------------------------------" << std::endl;
 
 	return sstream.str();
 }
 
 cl::Context GetContext(int platform_id, int device_id) {
-	vector<cl::Platform> platforms;
+	std::vector<cl::Platform> platforms;
 
 	cl::Platform::get(&platforms);
 
 	for (unsigned int i = 0; i < platforms.size(); i++)
 	{
-		vector<cl::Device> devices;
+		std::vector<cl::Device> devices;
 		platforms[i].getDevices((cl_device_type)CL_DEVICE_TYPE_ALL, &devices);
 
 		for (unsigned int j = 0; j < devices.size(); j++)
@@ -207,8 +205,8 @@ enum ProfilingResolution {
 	PROF_S = 1000000000
 };
 
-string GetFullProfilingInfo(const cl::Event& evnt, ProfilingResolution resolution) {
-	stringstream sstream;
+std::string GetFullProfilingInfo(const cl::Event& evnt, ProfilingResolution resolution) {
+	std::stringstream sstream;
 
 	sstream << "Queued " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
 	sstream << ", Submitted " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) / resolution;

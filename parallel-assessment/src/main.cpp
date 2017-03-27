@@ -3,17 +3,19 @@
 
 #include <vector>
 
-#ifdef __APPLE__
-#include <OpenCL/cl.hpp>
-#else
-#include <CL/cl.hpp>
-#endif
-
 #include "Utils.h"
 #include "windows_fileread.h"
 #include "analytics.h"
+#include "funcs.h"
 
-using namespace std::chrono;
+#ifndef cl_included
+	#define cl_included
+	#ifdef __APPLE__
+		#include <OpenCL/cl.hpp>
+	#else
+		#include <CL/cl.hpp>
+	#endif
+#endif
 
 //int welfords_variance(int data[], int size)
 //{
@@ -41,17 +43,52 @@ void print_help() {
 	std::cerr << "  -h : print this message" << std::endl;
 }
 
-typedef double data_type;
-
-void resize(data_type* arr, size_t& old_size, size_t add_size)
+void init_cl(int platform_id, int device_id)
 {
-	size_t new_size = old_size + add_size;
-	data_type* new_arr = new data_type[new_size];
+	context = GetContext(platform_id, device_id);
+	queue = cl::CommandQueue(context);
+	cl::Program::Sources sources;
 
-	memcpy(new_arr, arr, old_size * sizeof(data_type));
+	AddSources(sources, "my_kernels3.cl");
+	program = cl::Program(context, sources);
 
-	old_size = new_size;
-	arr = new_arr;
+	std::cout << "Running on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
+	std::cout << analytics::BuildInfo() << std::endl;
+
+	try
+	{
+		program.build();
+	}
+	catch (const cl::Error& err)
+	{
+		std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
+		std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
+		std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
+		throw err;
+	}
+}
+
+void init_data(const char* dir, double*& out_arr, size_t& out_size)
+{
+	timer::Start();
+	unsigned int len;
+	const char* inFile = winstr::read_optimal(dir, len);
+
+	std::cout << "Sequential Read (milliseconds): " << timer::QueryMilliseconds() << std::endl;
+
+	out_size = winstr::query_line_count(inFile, len);
+	out_arr = winstr::parse_lines(inFile, len, ' ', 5, out_size);
+
+	std::cout << "Sequential Parse (milliseconds): " << timer::QueryMillisecondsSinceLast() << std::endl;
+
+	local_size = 10;
+	size_t padding_size = out_size % local_size;
+
+	if (padding_size)
+		resize(out_arr, out_size, padding_size);
+
+	std::cout << "Sequential Resize (milliseconds): " << timer::QueryMillisecondsSinceLast() << "\n" << std::endl;
+	timer::Stop();
 }
 
 int main(int argc, char **argv) {
@@ -68,68 +105,20 @@ int main(int argc, char **argv) {
 
 	try
 	{
-		cl::Context context = GetContext(platform_id, device_id);
-		std::cout << "Running on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
+		init_cl(platform_id, device_id);
 
-		cl::CommandQueue queue(context);
+		double* init_A;
+		size_t padded_size = 0;
+		init_data("./data/temp_lincolnshire.txt", init_A, padded_size);
 
-		cl::Program::Sources sources;
-		AddSources(sources, "my_kernels3.cl");
+		data_type* A = convert(init_A, padded_size, 10);
+		data_type* B = new data_type[padded_size];
 
-		cl::Program program(context, sources);
+		size_t input_size = padded_size * sizeof(data_type);
+		size_t output_size = padded_size * sizeof(data_type);
+		size_t num_groups = padded_size / local_size;
 
-
-		std::cout << analytics::BuildInfo() << std::endl;
-
-		try
-		{
-			program.build();
-		}
-		catch (const cl::Error& err)
-		{
-			std::cout << "Build Status: " << program.getBuildInfo<CL_PROGRAM_BUILD_STATUS>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
-			std::cout << "Build Options:\t" << program.getBuildInfo<CL_PROGRAM_BUILD_OPTIONS>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
-			std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
-			throw err;
-		}
-
-		timer::Start();
-		unsigned int len;
-		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
-		std::cout << "Sequential Read (nanoseconds): " << timer::QueryNanoseconds() << std::endl;
-
-		size_t size = winstr::query_line_count(inFile, len);
-		data_type* A = winstr::parse_lines(inFile, len, ' ', 5, size);
-		std::cout << "Sequential Parse (nanoseconds): " << timer::QueryNanosecondsSinceLast() << std::endl;
-
-		size_t local_size = 10;
-		size_t padding_size = size % local_size;
-
-		if (padding_size)
-			resize(A, size, padding_size);
-		std::cout << "Sequential Resize (nanoseconds): " << timer::QueryNanosecondsSinceLast() << "\n" << std::endl;
-		timer::Stop();
-
-		data_type* B = new data_type[size];
-		size_t input_size = size * sizeof(data_type);
-		size_t output_size = size * sizeof(data_type);
-		size_t num_groups = size / local_size;
-
-		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
-		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
-
-		queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, input_size, &A[0]);
-		queue.enqueueFillBuffer(buffer_B, 0, 0, output_size);
-
-		cl::Kernel kernel_1 = cl::Kernel(program, "reduce_add_1");
-		kernel_1.setArg(0, buffer_A);
-		kernel_1.setArg(1, buffer_B);
-
-		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(size), cl::NDRange(local_size));
-
-		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
-
-		std::cout << B[0] << std::endl;
+		reduce_add_1(A, input_size, B, output_size, padded_size);
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

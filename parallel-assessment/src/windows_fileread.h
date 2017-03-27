@@ -22,7 +22,7 @@ unsigned int ComputeBytes(const char* dir)
 	return fileStatus.st_size - 1;
 }
 
-double parse_float(const char*& data, unsigned int len, unsigned int& index, int max_len)
+double parse_double(const char*& data, unsigned int len, unsigned int& index, int max_len)
 {
 	char* buffer = new char[max_len];
 	for (int i = 0; i < max_len; i++)
@@ -42,7 +42,7 @@ namespace winstr
 	size_t query_line_count(const char* dir)
 	{
 		char c; size_t size = 0;
-		ifstream file(dir);
+		std::ifstream file(dir);
 
 		while (file.get(c))
 		{
@@ -52,7 +52,6 @@ namespace winstr
 
 		return size;
 	}
-
 	size_t query_line_count(const char*& arr, int len)
 	{
 		size_t size = 0;
@@ -135,7 +134,7 @@ namespace winstr
 				if (index == size)
 					break;
 
-				out_data[index++] = parse_float(data, len, ++i, 5);
+				out_data[index++] = parse_double(data, len, ++i, 5);
 				current_column = 0;
 			}
 		}
