@@ -62,7 +62,7 @@ namespace winstr
 				++size;
 		}
 
-		return size;
+		return ++size;
 	}
 
 	char* read_optimal(const char* dir, unsigned int& len)

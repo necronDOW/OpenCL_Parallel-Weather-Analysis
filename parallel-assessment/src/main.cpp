@@ -105,13 +105,13 @@ int main(int argc, char **argv) {
 		size_t base_size = 0;
 		init_data("./data/temp_lincolnshire.txt", init_A, base_size);
 
-		data_type* A = convert(init_A, base_size, 10);
-		data_type* B = new data_type[base_size];
+		PRECISION* A = convert(init_A, base_size, 1);
+		PRECISION* B = new PRECISION[base_size];
 		
 		reduceAdd1(A, B, base_size);
 
 		int sum = 0;
-		for (int i = 0; i < base_size; i++)
+		for (int i = 0; i < 10; i++)
 			sum += A[i];
 		std::cout << sum << std::endl;
 
