@@ -38,7 +38,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\kernels\my_kernels3.cl">
+    <None Include="src\kernels\my_kernels.cl">
       <Filter>Kernel Files</Filter>
     </None>
   </ItemGroup>

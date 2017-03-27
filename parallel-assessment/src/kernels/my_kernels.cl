@@ -1,4 +1,4 @@
-﻿__kernel void reduce_add_1(__global const uint* A, __global uint* B)
+﻿__kernel void reduce_add_1(__global const int* A, __global int* B)
 {
 	int id = get_global_id(0);
 	int N = get_global_size(0);
