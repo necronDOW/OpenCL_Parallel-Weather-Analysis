@@ -41,6 +41,19 @@ void print_help() {
 	std::cerr << "  -h : print this message" << std::endl;
 }
 
+typedef double data_type;
+
+void resize(data_type* arr, size_t& old_size, size_t add_size)
+{
+	size_t new_size = old_size + add_size;
+	data_type* new_arr = new data_type[new_size];
+
+	memcpy(new_arr, arr, old_size * sizeof(data_type));
+
+	old_size = new_size;
+	arr = new_arr;
+}
+
 int main(int argc, char **argv) {
 	int platform_id = 0;
 	int device_id = 0;
@@ -65,20 +78,8 @@ int main(int argc, char **argv) {
 
 		cl::Program program(context, sources);
 
-#ifdef _DEBUG
-		std::cout << "Build_Mode=Debug" << std::endl;
-#else
-		std::cout << "Build_Mode=Release" << std::endl;
-#endif
 
-		timer::Start();
-		unsigned int len;
-		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
-		std::cout << "\nRead Time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
-
-		double* out = winstr::parse_lines(inFile, len, ' ', 5, 1873106);
-		std::cout << "\nParse Time (milliseconds): " << timer::QueryMilliseconds() << std::endl;
-		timer::Stop();
+		std::cout << analytics::BuildInfo() << std::endl;
 
 		try
 		{
@@ -92,25 +93,27 @@ int main(int argc, char **argv) {
 			throw err;
 		}
 
-		typedef int mytype;
-		std::vector<mytype> A(10, 1);
+		timer::Start();
+		unsigned int len;
+		const char* inFile = winstr::read_optimal("./data/temp_lincolnshire.txt", len);
+		std::cout << "Sequential Read (nanoseconds): " << timer::QueryNanoseconds() << std::endl;
+
+		size_t size = winstr::query_line_count(inFile, len);
+		data_type* A = winstr::parse_lines(inFile, len, ' ', 5, size);
+		std::cout << "Sequential Parse (nanoseconds): " << timer::QueryNanosecondsSinceLast() << std::endl;
 
 		size_t local_size = 10;
-
-		size_t padding_size = A.size() % local_size;
+		size_t padding_size = size % local_size;
 
 		if (padding_size)
-		{
-			std::vector<int> A_ext(local_size - padding_size, 0);
-			A.insert(A.end(), A_ext.begin(), A_ext.end());
-		}
+			resize(A, size, padding_size);
+		std::cout << "Sequential Resize (nanoseconds): " << timer::QueryNanosecondsSinceLast() << "\n" << std::endl;
+		timer::Stop();
 
-		size_t input_elements = A.size();
-		size_t input_size = A.size() * sizeof(mytype);
-		size_t nr_groups = input_elements / local_size;
-
-		std::vector<mytype> B(input_elements);
-		size_t output_size = B.size() * sizeof(mytype);
+		data_type* B = new data_type[size];
+		size_t input_size = size * sizeof(data_type);
+		size_t output_size = size * sizeof(data_type);
+		size_t num_groups = size / local_size;
 
 		cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, input_size);
 		cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, output_size);
@@ -122,9 +125,11 @@ int main(int argc, char **argv) {
 		kernel_1.setArg(0, buffer_A);
 		kernel_1.setArg(1, buffer_B);
 
-		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(input_elements), cl::NDRange(local_size));
+		queue.enqueueNDRangeKernel(kernel_1, cl::NullRange, cl::NDRange(size), cl::NDRange(local_size));
 
 		queue.enqueueReadBuffer(buffer_B, CL_TRUE, 0, output_size, &B[0]);
+
+		std::cout << B[0] << std::endl;
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

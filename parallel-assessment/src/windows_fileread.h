@@ -39,15 +39,28 @@ double parse_float(const char*& data, unsigned int len, unsigned int& index, int
 
 namespace winstr
 {
-	unsigned int query_line_count(const char* dir)
+	size_t query_line_count(const char* dir)
 	{
-		char c; unsigned int size = 0;
+		char c; size_t size = 0;
 		ifstream file(dir);
 
 		while (file.get(c))
 		{
 			if (c == '\n')
 				size++;
+		}
+
+		return size;
+	}
+
+	size_t query_line_count(const char*& arr, int len)
+	{
+		size_t size = 0;
+
+		for (int i = 0; i < len; i++)
+		{
+			if (arr[i] == '\n')
+				++size;
 		}
 
 		return size;
@@ -106,7 +119,7 @@ namespace winstr
 
 	double* parse_lines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
-		std::cout << "Parsing (size=" << size << ") ..." << std::endl;
+		//std::cout << "Parsing (size=" << size << ") ..." << std::endl;
 
 		unsigned char current_column = 0;
 		unsigned int index = 0;
