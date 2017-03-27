@@ -50,7 +50,7 @@ void init_cl(int platform_id, int device_id)
 	queue = cl::CommandQueue(context, CL_QUEUE_PROFILING_ENABLE);
 	cl::Program::Sources sources;
 
-	AddSources(sources, "my_kernels.cl");
+	AddSources(sources, "kernels.cl");
 	program = cl::Program(context, sources);
 
 	std::cout << "Running on " << GetPlatformName(platform_id) << ", " << GetDeviceName(platform_id, device_id) << std::endl;
@@ -67,24 +67,32 @@ void init_cl(int platform_id, int device_id)
 		std::cout << "Build Log:\t " << program.getBuildInfo<CL_PROGRAM_BUILD_LOG>(context.getInfo<CL_CONTEXT_DEVICES>()[0]) << std::endl;
 		throw err;
 	}
-
-	local_size = 10;
 }
 
 void init_data(const char* dir, double*& out_arr, size_t& out_size)
 {
-	std::cout << dir << std::endl;
 	timer::Start();
 	unsigned int len;
 	const char* inFile = winstr::read_optimal(dir, len);
 
-	std::cout << "Sequential read [ms]: " << timer::QueryMilliseconds() << std::endl;
+	std::cout << "Sequential read [ns]: " << timer::QueryNanoseconds() << std::endl;
 
 	out_size = winstr::query_line_count(inFile, len);
 	out_arr = winstr::parse_lines(inFile, len, ' ', 5, out_size);
 
-	std::cout << "Sequential parse [ms]: " << timer::QueryMillisecondsSinceLast() << std::endl;
+	std::cout << "Sequential parse [ns]: " << timer::QueryNanosecondsSinceLast() << std::endl;
 	timer::Stop();
+}
+
+void printResults(double _min, double _max, double _mean)
+{
+	printf("\nOpenCL Results:\n   Minimum: %.1f\n   Maximum: %.1f\n   Mean: %.5f\n\n", _min, _max, _mean);
+}
+
+template<typename T>
+double mean(T value, double size)
+{
+	return value / size;
 }
 
 int main(int argc, char **argv) {
@@ -108,17 +116,22 @@ int main(int argc, char **argv) {
 		size_t base_size = 0;
 		init_data(std::string(data_path + "temp_lincolnshire.txt").c_str(), init_A, base_size);
 
-		PRECISION* A = convert(init_A, base_size, 1);
+		size_t original_size = base_size;
+		PRECISION* A = convert(init_A, base_size, 10);
 		PRECISION* B = new PRECISION[base_size];
+
+		std::cout << std::endl;
 		
-		reduceAdd1(A, B, base_size);
+		reduce_minmax_global(A, B, base_size, false);
+		double data_min = B[0] / 10.0;
 
-		int sum = 0;
-		for (int i = 0; i < base_size; i++)
-			sum += A[i];
-		std::cout << sum << std::endl;
+		reduce_minmax_global(A, B, base_size, true);
+		double data_max = B[0] / 10.0;
 
-		std::cout << B[0] << std::endl;
+		reduce_sum(A, B, base_size);
+		double data_mean = mean(B[0] / 10.0, original_size);
+
+		printResults(data_min, data_max, data_mean);
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

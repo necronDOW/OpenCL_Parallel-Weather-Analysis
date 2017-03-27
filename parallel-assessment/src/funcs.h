@@ -72,7 +72,19 @@ size_t cl_resize(cl::Kernel kernel, PRECISION*& arr, size_t& size)
 	return pref_size;
 }
 
-void reduceAdd1(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
+cl::Buffer enqueue_buffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECISION* data, size_t data_size)
+{
+	cl::Buffer buffer(context, mem_mode, data_size);
+	
+	if (mem_mode == CL_MEM_READ_ONLY)
+		queue.enqueueWriteBuffer(buffer, CL_TRUE, 0, data_size, &data[0]);
+	else queue.enqueueFillBuffer(buffer, 0, 0, data_size);
+
+	kernel.setArg(arg_index, buffer);
+	return buffer;
+}
+
+void reduce_sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 {
 	const char* kernel_id = "reduce_add_4";
 	cl::Kernel kernel = cl::Kernel(program, kernel_id);
@@ -81,20 +93,59 @@ void reduceAdd1(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 	outbuf = new PRECISION[len];
 	size_t data_size = len * sizeof(PRECISION);
 
-	cl::Buffer buffer_A(context, CL_MEM_READ_ONLY, data_size);
-	cl::Buffer buffer_B(context, CL_MEM_READ_WRITE, data_size);
-
-	queue.enqueueWriteBuffer(buffer_A, CL_TRUE, 0, data_size, &inbuf[0]);
-	queue.enqueueFillBuffer(buffer_B, 0, 0, data_size);
-
-	kernel.setArg(0, buffer_A);
-	kernel.setArg(1, buffer_B);
+	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = enqueue_buffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
 	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
 	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+}
 
-	queue.finish();
+void reduce_minmax_local(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
+{
+	const char* kernel_id = (dir) ? "reduce_max" : "reduce_min";
+	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+
+	local_size = cl_resize(kernel, inbuf, len);
+	outbuf = new PRECISION[len];
+	size_t data_size = len * sizeof(PRECISION);
+
+	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = enqueue_buffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
+
+	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
+	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+}
+
+void reduce_minmax_global(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
+{
+	const char* kernel_id = (dir) ? "reduce_max_global" : "reduce_min_global";
+	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+
+	local_size = cl_resize(kernel, inbuf, len);
+	outbuf = new PRECISION[len];
+	size_t data_size = len * sizeof(PRECISION);
+
+	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = enqueue_buffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+
+	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
+	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+}
+
+void bitonic_sort(PRECISION*& inbuf, size_t len)
+{
+	const char* kernel_id = "sort_bitonic";
+	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+
+	local_size = cl_resize(kernel, inbuf, len);
+	size_t data_size = len * sizeof(PRECISION);
+
+	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+
+	size_t ex_time = profiledExecution(kernel, buffer_A, data_size, inbuf, len);
+	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
 }
 
 #endif

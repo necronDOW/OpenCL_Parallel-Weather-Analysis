@@ -131,7 +131,7 @@
     <ClInclude Include="src\windows_fileread.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="src\kernels\my_kernels.cl" />
+    <None Include="src\kernels\kernels.cl" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
