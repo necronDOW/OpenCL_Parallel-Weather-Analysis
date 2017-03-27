@@ -7,6 +7,7 @@
 #include "windows_fileread.h"
 #include "analytics.h"
 #include "funcs.h"
+#include "paths.h"
 
 #ifndef cl_included
 	#define cl_included
@@ -72,6 +73,7 @@ void init_cl(int platform_id, int device_id)
 
 void init_data(const char* dir, double*& out_arr, size_t& out_size)
 {
+	std::cout << dir << std::endl;
 	timer::Start();
 	unsigned int len;
 	const char* inFile = winstr::read_optimal(dir, len);
@@ -99,11 +101,12 @@ int main(int argc, char **argv) {
 
 	try
 	{
+		init_paths();
 		init_cl(platform_id, device_id);
 
 		double* init_A;
 		size_t base_size = 0;
-		init_data("./data/temp_lincolnshire.txt", init_A, base_size);
+		init_data(std::string(data_path + "temp_lincolnshire.txt").c_str(), init_A, base_size);
 
 		PRECISION* A = convert(init_A, base_size, 1);
 		PRECISION* B = new PRECISION[base_size];
@@ -111,7 +114,7 @@ int main(int argc, char **argv) {
 		reduceAdd1(A, B, base_size);
 
 		int sum = 0;
-		for (int i = 0; i < 10; i++)
+		for (int i = 0; i < base_size; i++)
 			sum += A[i];
 		std::cout << sum << std::endl;
 

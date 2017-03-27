@@ -29,8 +29,7 @@ double parse_double(const char*& data, unsigned int len, unsigned int& index, in
 	{
 		if (data[index] == '\n')
 			break;
-
-		buffer[i] = data[index++];
+		else buffer[i] = data[index++];
 	}
 
 	try { return atof(buffer); }
@@ -118,8 +117,6 @@ namespace winstr
 
 	double* parse_lines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
-		//std::cout << "Parsing (size=" << size << ") ..." << std::endl;
-
 		unsigned char current_column = 0;
 		unsigned int index = 0;
 		double* out_data = new double[size];
@@ -134,7 +131,7 @@ namespace winstr
 				if (index == size)
 					break;
 
-				out_data[index++] = parse_double(data, len, ++i, 5);
+				out_data[index++] = parse_double(data, len, ++i, 6);
 				current_column = 0;
 			}
 		}

@@ -5,6 +5,7 @@
 #include <vector>
 #include <iostream>
 #include <sstream>
+#include "paths.h"
 
 #ifdef __APPLE__
 #include <OpenCL/cl.hpp>
@@ -35,8 +36,6 @@ std::string GetDeviceName(int platform_id, int device_id) {
 	platforms[platform_id].getDevices((cl_device_type)CL_DEVICE_TYPE_ALL, &devices);
 	return devices[device_id].getInfo<CL_DEVICE_NAME>();
 }
-
-const std::string kernel_path = "./src/kernels/";
 
 const char *getErrorString(cl_int error) {
 	switch (error){

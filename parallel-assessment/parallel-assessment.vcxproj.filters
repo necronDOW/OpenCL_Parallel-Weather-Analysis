@@ -36,6 +36,9 @@
     <ClInclude Include="src\funcs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\paths.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="src\kernels\my_kernels.cl">

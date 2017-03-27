@@ -89,7 +89,7 @@ void reduceAdd1(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 
 	kernel.setArg(0, buffer_A);
 	kernel.setArg(1, buffer_B);
-	kernel.setArg(2, cl::Local(data_size));
+	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
 	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
 	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
