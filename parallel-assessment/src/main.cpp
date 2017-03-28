@@ -8,6 +8,7 @@
 #include "analytics.h"
 #include "funcs.h"
 #include "paths.h"
+#include "menu_system.h"
 
 #ifndef cl_included
 	#define cl_included
@@ -35,7 +36,7 @@
 //	return M2 / (N - 1);
 //}
 
-void print_help() {
+void PrintHelp() {
 	std::cerr << "Application usage:" << std::endl;
 
 	std::cerr << "  -p : select platform " << std::endl;
@@ -44,7 +45,7 @@ void print_help() {
 	std::cerr << "  -h : print this message" << std::endl;
 }
 
-void init_cl(int platform_id, int device_id)
+inline void InitCL(int platform_id, int device_id)
 {
 	context = GetContext(platform_id, device_id);
 	queue = cl::CommandQueue(context, CL_QUEUE_PROFILING_ENABLE);
@@ -69,30 +70,19 @@ void init_cl(int platform_id, int device_id)
 	}
 }
 
-void init_data(const char* dir, double*& out_arr, size_t& out_size)
+inline void InitData(const char* dir, double*& out_arr, size_t& out_size)
 {
 	timer::Start();
 	unsigned int len;
-	const char* inFile = winstr::read_optimal(dir, len);
+	const char* inFile = winstr::ReadOptimal(dir, len);
 
 	std::cout << "Sequential read [ns]: " << timer::QueryNanoseconds() << std::endl;
 
-	out_size = winstr::query_line_count(inFile, len);
-	out_arr = winstr::parse_lines(inFile, len, ' ', 5, out_size);
+	out_size = winstr::QueryLineCount(inFile, len);
+	out_arr = winstr::ParseLines(inFile, len, ' ', 5, out_size);
 
 	std::cout << "Sequential parse [ns]: " << timer::QueryNanosecondsSinceLast() << std::endl;
 	timer::Stop();
-}
-
-void printResults(double _min, double _max, double _mean)
-{
-	printf("\nOpenCL Results:\n   Minimum: %.1f\n   Maximum: %.1f\n   Mean: %.5f\n\n", _min, _max, _mean);
-}
-
-template<typename T>
-double mean(T value, double size)
-{
-	return value / size;
 }
 
 int main(int argc, char **argv) {
@@ -104,17 +94,18 @@ int main(int argc, char **argv) {
 		if ((strcmp(argv[i], "-p") == 0) && (i < (argc - 1))) { platform_id = atoi(argv[++i]); }
 		else if ((strcmp(argv[i], "-d") == 0) && (i < (argc - 1))) { device_id = atoi(argv[++i]); }
 		else if (strcmp(argv[i], "-l") == 0) { std::cout << ListPlatformsDevices() << std::endl; }
-		else if (strcmp(argv[i], "-h") == 0) { print_help(); }
+		else if (strcmp(argv[i], "-h") == 0) { PrintHelp(); }
 	}
 
 	try
 	{
-		init_paths();
-		init_cl(platform_id, device_id);
+		InitPaths();
+		InitCL(platform_id, device_id);
+		InitMenus();
 
 		double* init_A;
 		size_t base_size = 0;
-		init_data(std::string(data_path + "temp_lincolnshire.txt").c_str(), init_A, base_size);
+		InitData(std::string(data_path + "temp_lincolnshire.txt").c_str(), init_A, base_size);
 
 		size_t original_size = base_size;
 		PRECISION* A = convert(init_A, base_size, 10);
@@ -122,21 +113,14 @@ int main(int argc, char **argv) {
 
 		std::cout << std::endl;
 		
-		reduce_minmax_global(A, B, base_size, false);
-		double data_min = B[0] / 10.0;
-
-		reduce_minmax_global(A, B, base_size, true);
-		double data_max = B[0] / 10.0;
-
-		reduce_sum(A, B, base_size);
-		double data_mean = mean(B[0] / 10.0, original_size);
-
-		printResults(data_min, data_max, data_mean);
+		bool finished = false;
+		while (!finished)
+			MainMenu(A, B, base_size, original_size, finished);
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;
+		system("pause");
 	}
 
-	system("pause");
 	return 0;
 }

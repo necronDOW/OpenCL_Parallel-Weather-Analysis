@@ -5,6 +5,9 @@
 #include <fstream>
 #include <windows.h>
 #include <sys/stat.h>
+#include <ctime>
+
+#include "paths.h"
 
 unsigned int g_BytesTransferred = 0;
 
@@ -22,7 +25,7 @@ unsigned int ComputeBytes(const char* dir)
 	return fileStatus.st_size - 1;
 }
 
-double parse_double(const char*& data, unsigned int len, unsigned int& index, int max_len)
+double ParseDouble(const char*& data, unsigned int len, unsigned int& index, int max_len)
 {
 	char* buffer = new char[max_len];
 	for (int i = 0; i < max_len; i++)
@@ -36,9 +39,20 @@ double parse_double(const char*& data, unsigned int len, unsigned int& index, in
 	catch (...) { return NULL; }
 }
 
+std::string TimeStamp()
+{
+	time_t t = time(0);
+	struct tm* now = localtime(&t);
+
+	std::stringstream ss;
+	ss << now->tm_hour << ":" << now->tm_min << ":" << now->tm_sec
+		<< " " << now->tm_mday << "/" << (now->tm_mon+1) << "/" << (now->tm_year+1900);
+	return ss.str();
+}
+
 namespace winstr
 {
-	size_t query_line_count(const char* dir)
+	size_t QueryLineCount(const char* dir)
 	{
 		char c; size_t size = 0;
 		std::ifstream file(dir);
@@ -51,7 +65,7 @@ namespace winstr
 
 		return size;
 	}
-	size_t query_line_count(const char*& arr, int len)
+	size_t QueryLineCount(const char*& arr, int len)
 	{
 		size_t size = 0;
 
@@ -64,7 +78,7 @@ namespace winstr
 		return ++size;
 	}
 
-	char* read_optimal(const char* dir, unsigned int& len)
+	char* ReadOptimal(const char* dir, unsigned int& len)
 	{
 		std::cout << "Reading (dir='" << dir << "') ..." << std::endl;
 
@@ -101,7 +115,7 @@ namespace winstr
 		return ReadBuffer;
 	}
 
-	double* read_fscanf(const char* dir, unsigned int size)
+	double* Read_fscanf(const char* dir, unsigned int size)
 	{
 		double* values = new double[size];
 
@@ -115,7 +129,22 @@ namespace winstr
 		return values;
 	}
 
-	double* parse_lines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
+	void Write(const char* data)
+	{
+		std::string dir = base_path + "logs/profiler_log.txt";
+		std::ofstream file(dir, std::ios::app);
+
+		time_t t = time(0);
+		struct tm* now = localtime(&t);
+
+		if (file.is_open())
+		{
+			file << data << "    " << TimeStamp() << "\n";
+			file.close();
+		}
+	}
+
+	double* ParseLines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
 		unsigned char current_column = 0;
 		unsigned int index = 0;
@@ -131,7 +160,7 @@ namespace winstr
 				if (index == size)
 					break;
 
-				out_data[index++] = parse_double(data, len, ++i, 6);
+				out_data[index++] = ParseDouble(data, len, ++i, 6);
 				current_column = 0;
 			}
 		}

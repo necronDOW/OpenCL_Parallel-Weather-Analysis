@@ -12,7 +12,11 @@
 	#endif
 #endif
 
+#include "windows_fileread.h"
+
 typedef int PRECISION;
+
+// ------------------------------------------------------------------------ Helper Functions ------------------------------------------------------------------------ //
 
 int* convert(double* arr, size_t size, int multiplier)
 {
@@ -31,7 +35,13 @@ double* convert(int* arr, size_t size, int multiplier)
 	return new_arr;
 }
 
-void resize(PRECISION*& arr, size_t& size, size_t add_size)
+template<typename T>
+double mean(T value, double size)
+{
+	return value / size;
+}
+
+void Resize(PRECISION*& arr, size_t& size, size_t add_size)
 {
 	size_t new_size = size + add_size;
 	PRECISION* new_arr = new PRECISION[new_size];
@@ -49,9 +59,10 @@ void resize(PRECISION*& arr, size_t& size, size_t add_size)
 cl::Context context;
 cl::CommandQueue queue;
 cl::Program program;
-
+bool max_wg_size = false;
 size_t local_size;
-long long profiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, PRECISION*& outbuf, size_t len)
+
+long long ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, PRECISION*& outbuf, size_t len)
 {
 	cl::Event prof_event;
 	queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(len), cl::NDRange(local_size), NULL, &prof_event);
@@ -60,19 +71,27 @@ long long profiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_
 	return prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
 }
 
-size_t cl_resize(cl::Kernel kernel, PRECISION*& arr, size_t& size)
+void PrintProfilerInfo(std::string kernel_id, size_t ex_time)
+{
+	std::string output = "Kernel (" + kernel_id + ") execution time [ns]: " + std::to_string(ex_time);
+	std::cout << output << std::endl;
+	winstr::Write(output.c_str());
+}
+
+size_t CLResize(cl::Kernel kernel, PRECISION*& arr, size_t& size)
 {
 	cl::Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
-	size_t pref_size = kernel.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
+	size_t pref_size = (max_wg_size) ? kernel.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device)
+		: kernel.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
 
 	size_t padding_size = size % pref_size;
 	if (padding_size)
-		resize(arr, size, pref_size - padding_size);
+		Resize(arr, size, pref_size - padding_size);
 
 	return pref_size;
 }
 
-cl::Buffer enqueue_buffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECISION* data, size_t data_size)
+cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECISION* data, size_t data_size)
 {
 	cl::Buffer buffer(context, mem_mode, data_size);
 	
@@ -84,68 +103,64 @@ cl::Buffer enqueue_buffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECIS
 	return buffer;
 }
 
-void reduce_sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
+void Sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 {
-	const char* kernel_id = "reduce_add_4";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+	std::string kernel_id = "reduce_add";
+	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
-	local_size = cl_resize(kernel, inbuf, len);
+	local_size = CLResize(kernel, inbuf, len);
 	outbuf = new PRECISION[len];
 	size_t data_size = len * sizeof(PRECISION);
 
-	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = enqueue_buffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
-	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
-	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_B, data_size, outbuf, len));
 }
 
-void reduce_minmax_local(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
+void LocalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
 {
 	const char* kernel_id = (dir) ? "reduce_max" : "reduce_min";
 	cl::Kernel kernel = cl::Kernel(program, kernel_id);
 
-	local_size = cl_resize(kernel, inbuf, len);
+	local_size = CLResize(kernel, inbuf, len);
 	outbuf = new PRECISION[len];
 	size_t data_size = len * sizeof(PRECISION);
 
-	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = enqueue_buffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
-	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
-	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_B, data_size, outbuf, len));
 }
 
-void reduce_minmax_global(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
+void GlobalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
 {
 	const char* kernel_id = (dir) ? "reduce_max_global" : "reduce_min_global";
 	cl::Kernel kernel = cl::Kernel(program, kernel_id);
 
-	local_size = cl_resize(kernel, inbuf, len);
+	local_size = CLResize(kernel, inbuf, len);
 	outbuf = new PRECISION[len];
 	size_t data_size = len * sizeof(PRECISION);
 
-	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = enqueue_buffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 
-	size_t ex_time = profiledExecution(kernel, buffer_B, data_size, outbuf, len);
-	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_B, data_size, outbuf, len));
 }
 
-void bitonic_sort(PRECISION*& inbuf, size_t len)
+void BitonicSort(PRECISION*& inbuf, size_t len)
 {
 	const char* kernel_id = "sort_bitonic";
 	cl::Kernel kernel = cl::Kernel(program, kernel_id);
 
-	local_size = cl_resize(kernel, inbuf, len);
+	local_size = CLResize(kernel, inbuf, len);
 	size_t data_size = len * sizeof(PRECISION);
 
-	cl::Buffer buffer_A = enqueue_buffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
 
-	size_t ex_time = profiledExecution(kernel, buffer_A, data_size, inbuf, len);
-	std::cout << "Kernel (" << kernel_id << ") execution time [ns]: " << ex_time << std::endl;
+	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_A, data_size, inbuf, len));
 }
 
 #endif

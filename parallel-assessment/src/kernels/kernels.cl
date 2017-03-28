@@ -3,77 +3,8 @@
 // ------------------------------------------------------------------------------------------------------//
 
 // ------------------------------------------ REDUCTION ------------------------------------------ //
-// W_REDUCTION 1
-__kernel void reduce_add_1(__global const int* A, __global int* B)
-{
-	int id = get_global_id(0);
-	int N = get_global_size(0);
-
-	B[id] = A[id];
-	barrier(CLK_GLOBAL_MEM_FENCE);
-	 
-	if (((id % 2) == 0) && ((id + 1) < N)) 
-		B[id] += B[id + 1];
-
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
-	if (((id % 4) == 0) && ((id + 2) < N)) 
-		B[id] += B[id + 2];
-
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
-	if (((id % 8) == 0) && ((id + 4) < N)) 
-		B[id] += B[id + 4];
-
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
-	if (((id % 16) == 0) && ((id + 8) < N)) 
-		B[id] += B[id + 8];
-}
-
-// W_REDUCTION 2
-__kernel void reduce_add_2(__global const int* A, __global int* B)
-{
-	int id = get_global_id(0);
-	int N = get_global_size(0);
-
-	B[id] = A[id];
-
-	barrier(CLK_GLOBAL_MEM_FENCE);
-
-	for (int i = 1; i < N; i *= 2)
-	{
-		if (!(id % (i * 2)) && ((id + i) < N)) 
-			B[id] += B[id + i];
-
-		barrier(CLK_GLOBAL_MEM_FENCE);
-	}
-}
-
-// W_REDUCTION 3
-__kernel void reduce_add_3(__global const int* A, __global int* B, __local int* scratch)
-{
-	int id = get_global_id(0);
-	int lid = get_local_id(0);
-	int N = get_local_size(0);
-
-	scratch[lid] = A[id];
-
-	barrier(CLK_LOCAL_MEM_FENCE);
-
-	for (int i = 1; i < N; i *= 2)
-	{
-		if (!(lid % (i * 2)) && ((lid + i) < N)) 
-			scratch[lid] += scratch[lid + i];
-
-		barrier(CLK_LOCAL_MEM_FENCE);
-	}
-
-	B[id] = scratch[lid];
-}
-
-// W_REDUCTION 4
-__kernel void reduce_add_4(__global const int* A, __global int* B, __local int* scratch)
+// W_REDUCTION
+__kernel void reduce_add(__global const int* A, __global int* B, __local int* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -92,9 +23,7 @@ __kernel void reduce_add_4(__global const int* A, __global int* B, __local int* 
 	}
 
 	if (!lid)
-	{
-		atomic_add(&B[0],scratch[lid]);
-	}
+		atomic_add(&B[0], scratch[lid]);
 }
 
 // ------------------------------------------ BITONIC SORTS ------------------------------------------ //
@@ -121,7 +50,7 @@ void bitonic_merge(int id, __global int* A, int N, bool dir)
 	}
 }
 
-// W_BITONIC_SORT
+// W_BitonicSort
 __kernel void sort_bitonic(__global int* A)
 {
 	int id = get_global_id(0);
@@ -206,7 +135,7 @@ __kernel void scan_add_adjust(__global int* A, __global const int* B)
 // ------------------------------------------ ALTERNATIVE KERNELS ------------------------------------------//
 // ---------------------------------------------------------------------------------------------------------//
 
-// BITONIC_1 (http://www.bealto.com/gpu-sorting_parallel-bitonic-local.html)
+// ------------------------------------------ BITONIC SORT (http://www.bealto.com/gpu-sorting_parallel-bitonic-local.html) ------------------------------------------ //
 #if CONFIG_USE_VALUE
 	#define getKey(a) ((a).x)
 	#define getValue(a) ((a).y)
@@ -251,7 +180,8 @@ __kernel void bitonic_local(__global const int* in, __global int* out, __local i
 	out[lid] = cache[lid];
 }
 
-// TWO-STAGE_REDUCTION_1 (http://developer.amd.com/resources/articles-whitepapers/opencl-optimization-case-study-simple-reductions/)
+// ------------------------------------------ TWO-STAGE_REDUCTION ------------------------------------------ //
+// REDUCE_MIN_LOCAL
 __kernel void reduce_min(__global const int* in, __global int* out, __local int* scratch)
 {
 	int lid = get_local_id(0);
@@ -271,6 +201,7 @@ __kernel void reduce_min(__global const int* in, __global int* out, __local int*
 		atomic_min(&out[0], scratch[lid]);
 }
 
+// REDUCE_MIN_GLOBAL
 __kernel void reduce_min_global(__global const int* in, __global int* out)
 {
 	int id = get_global_id(0);
@@ -288,6 +219,7 @@ __kernel void reduce_min_global(__global const int* in, __global int* out)
 	atomic_min(&out[0], out[id]);
 }
 
+// REDUCE_MAX_LOCAL
 __kernel void reduce_max(__global const int* in, __global int* out, __local int* scratch)
 {
 	int lid = get_local_id(0);
@@ -307,6 +239,7 @@ __kernel void reduce_max(__global const int* in, __global int* out, __local int*
 		atomic_max(&out[0], scratch[lid]);
 }
 
+// REDUCE_MAX_GLOBAL
 __kernel void reduce_max_global(__global const int* in, __global int* out)
 {
 	int id = get_global_id(0);
