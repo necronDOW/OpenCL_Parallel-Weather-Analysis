@@ -1,0 +1,35 @@
+Kernel (reduce_min_global) execution time [ns]: 
+	Queued 24128
+	Submitted 110848
+	Executed 821440
+	Total 956416
+22:28:41 28/3/2017
+
+Kernel (reduce_min) execution time [ns]: 
+	Queued 23104
+	Submitted 99968
+	Executed 5591424
+	Total 5714496
+22:28:44 28/3/2017
+
+Kernel (reduce_max_global) execution time [ns]: 
+	Queued 22848
+	Submitted 107712
+	Executed 813984
+	Total 944544
+22:28:46 28/3/2017
+
+Kernel (reduce_max) execution time [ns]: 
+	Queued 22688
+	Submitted 107552
+	Executed 5681152
+	Total 5811392
+22:28:47 28/3/2017
+
+Kernel (reduce_add) execution time [ns]: 
+	Queued 23200
+	Submitted 95872
+	Executed 200384
+	Total 319456
+22:28:47 28/3/2017
+

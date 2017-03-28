@@ -61,21 +61,26 @@ cl::CommandQueue queue;
 cl::Program program;
 bool max_wg_size = false;
 size_t local_size;
+ProfilingResolution profiler_resolution = PROF_NS;
 
-long long ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, PRECISION*& outbuf, size_t len)
+void PrintProfilerInfo(std::string kernel_id, size_t ex_time, const cl::Event* event = nullptr)
+{
+	const char* resolution_str = GetResolutionString(profiler_resolution);
+	std::string profiling_str = (event) ? GetFullProfilingInfo(*event, profiler_resolution) : std::to_string(ex_time);
+
+	std::string output = "Kernel (" + kernel_id + ") execution time " + resolution_str + ": " + profiling_str;
+	std::cout << output << std::endl;
+	winstr::Write(output.c_str());
+}
+
+void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, PRECISION*& outbuf, size_t len, const char* kernel_name)
 {
 	cl::Event prof_event;
 	queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(len), cl::NDRange(local_size), NULL, &prof_event);
 	queue.enqueueReadBuffer(buffer, CL_TRUE, 0, outbuf_size, &outbuf[0]);
 
-	return prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-}
-
-void PrintProfilerInfo(std::string kernel_id, size_t ex_time)
-{
-	std::string output = "Kernel (" + kernel_id + ") execution time [ns]: " + std::to_string(ex_time);
-	std::cout << output << std::endl;
-	winstr::Write(output.c_str());
+	long long ex_time = prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+	PrintProfilerInfo(kernel_name, ex_time, &prof_event);
 }
 
 size_t CLResize(cl::Kernel kernel, PRECISION*& arr, size_t& size)
@@ -105,8 +110,8 @@ cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECISI
 
 void Sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 {
-	std::string kernel_id = "reduce_add";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
+	const char* kernel_id = "reduce_add";
+	cl::Kernel kernel = cl::Kernel(program, kernel_id);
 
 	local_size = CLResize(kernel, inbuf, len);
 	outbuf = new PRECISION[len];
@@ -116,7 +121,7 @@ void Sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
-	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_B, data_size, outbuf, len));
+	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
 }
 
 void LocalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
@@ -132,7 +137,7 @@ void LocalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
 	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
-	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_B, data_size, outbuf, len));
+	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
 }
 
 void GlobalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
@@ -147,7 +152,7 @@ void GlobalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
 	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 
-	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_B, data_size, outbuf, len));
+	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
 }
 
 void BitonicSort(PRECISION*& inbuf, size_t len)
@@ -160,7 +165,7 @@ void BitonicSort(PRECISION*& inbuf, size_t len)
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
 
-	PrintProfilerInfo(kernel_id, ProfiledExecution(kernel, buffer_A, data_size, inbuf, len));
+	ProfiledExecution(kernel, buffer_A, data_size, inbuf, len, kernel_id);
 }
 
 #endif

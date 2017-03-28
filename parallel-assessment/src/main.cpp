@@ -76,18 +76,19 @@ inline void InitData(const char* dir, double*& out_arr, size_t& out_size)
 	unsigned int len;
 	const char* inFile = winstr::ReadOptimal(dir, len);
 
-	std::cout << "Sequential read [ns]: " << timer::QueryNanoseconds() << std::endl;
+	std::cout << "Sequential read "<< GetResolutionString(profiler_resolution) << ": " << timer::Query(profiler_resolution) << std::endl;
 
 	out_size = winstr::QueryLineCount(inFile, len);
 	out_arr = winstr::ParseLines(inFile, len, ' ', 5, out_size);
 
-	std::cout << "Sequential parse [ns]: " << timer::QueryNanosecondsSinceLast() << std::endl;
+	std::cout << "Sequential parse " << GetResolutionString(profiler_resolution) << ": " << timer::QuerySinceLast(profiler_resolution) << std::endl;
 	timer::Stop();
 }
 
 int main(int argc, char **argv) {
 	int platform_id = 0;
 	int device_id = 0;
+	char* file_dir = "temp_lincolnshire.txt";
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -95,6 +96,7 @@ int main(int argc, char **argv) {
 		else if ((strcmp(argv[i], "-d") == 0) && (i < (argc - 1))) { device_id = atoi(argv[++i]); }
 		else if (strcmp(argv[i], "-l") == 0) { std::cout << ListPlatformsDevices() << std::endl; }
 		else if (strcmp(argv[i], "-h") == 0) { PrintHelp(); }
+		else if (strcmp(argv[i], "-s") == 0) { file_dir = "temp_lincolnshire_short.txt"; }
 	}
 
 	try
@@ -105,7 +107,7 @@ int main(int argc, char **argv) {
 
 		double* init_A;
 		size_t base_size = 0;
-		InitData(std::string(data_path + "temp_lincolnshire.txt").c_str(), init_A, base_size);
+		InitData(std::string(data_path + file_dir).c_str(), init_A, base_size);
 
 		size_t original_size = base_size;
 		PRECISION* A = convert(init_A, base_size, 10);

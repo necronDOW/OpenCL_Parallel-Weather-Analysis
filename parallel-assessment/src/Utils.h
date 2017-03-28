@@ -207,20 +207,24 @@ enum ProfilingResolution {
 std::string GetFullProfilingInfo(const cl::Event& evnt, ProfilingResolution resolution) {
 	std::stringstream sstream;
 
-	sstream << "Queued " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
-	sstream << ", Submitted " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) / resolution;
-	sstream << ", Executed " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>()) / resolution;
-	sstream << ", Total " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
-
-	switch (resolution) {
-	case PROF_NS: sstream << " [ns]"; break;
-	case PROF_US: sstream << " [us]"; break;
-	case PROF_MS: sstream << " [ms]"; break;
-	case PROF_S: sstream << " [s]"; break;
-	default: break;
-	}
+	sstream << "\n\tQueued " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
+	sstream << "\n\tSubmitted " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) / resolution;
+	sstream << "\n\tExecuted " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>()) / resolution;
+	sstream << "\n\tTotal " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
 
 	return sstream.str();
+}
+
+const char* GetResolutionString(ProfilingResolution resolution)
+{
+	switch (resolution)
+	{
+		case PROF_NS: return "[ns]";
+		case PROF_US: return "[us]";
+		case PROF_MS: return "[ms]";
+		case PROF_S: return "[s]";
+		default: break;
+	}
 }
 
 #endif

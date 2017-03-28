@@ -139,7 +139,7 @@ namespace winstr
 
 		if (file.is_open())
 		{
-			file << data << "    " << TimeStamp() << "\n";
+			file << data << "\n" << TimeStamp() << "\n\n";
 			file.close();
 		}
 	}

@@ -25,28 +25,19 @@ namespace timer
 	void Stop() { start = std::chrono::time_point<std::chrono::steady_clock>(); }
 	void Reset() { Start(); }
 
-	unsigned long QueryNanoseconds()
+	unsigned long Query(ProfilingResolution resolution)
 	{
 		unsigned long new_query = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
 		since_last = new_query - last_query;
 		last_query = new_query;
 
-		return new_query;
+		return new_query / resolution;
 	}
-	unsigned long QueryNanosecondsSinceLast()
+	unsigned long QuerySinceLast(ProfilingResolution resolution)
 	{
-		QueryNanoseconds();
-		return since_last;
+		Query(PROF_NS);
+		return since_last / resolution;
 	}
-
-	unsigned long QueryMicroseconds() { return QueryNanoseconds() / 1000; }
-	unsigned long QueryMicrosecondsSinceLast() { return QueryNanosecondsSinceLast() / 1000; }
-
-	unsigned long QueryMilliseconds() { return QueryNanoseconds() / 1000000; }
-	unsigned long QueryMillisecondsSinceLast() { return QueryNanosecondsSinceLast() / 1000000; }
-
-	unsigned long QuerySeconds() { return QueryNanoseconds() / 1000000000; }
-	unsigned long QuerySecondsSinceLast() { return QueryNanosecondsSinceLast() / 1000000000; }
 }
 
 #endif
