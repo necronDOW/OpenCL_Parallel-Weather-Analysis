@@ -16,7 +16,7 @@ __kernel void reduce_add(__global const int* A, __global int* B, __local int* sc
 
 	for (int i = 1; i < N; i *= 2)
 	{
-		if (!(lid % (i * 2)) && ((lid + i) < N)) 
+		//if (!(lid % (i * 2)) && ((lid + i) < N))
 			scratch[lid] += scratch[lid + i];
 
 		barrier(CLK_LOCAL_MEM_FENCE);
@@ -62,6 +62,7 @@ __kernel void sort_bitonic(__global int* A)
 			bitonic_merge(id, A, i*2, false);
 		else if ((id + i*2) % (i*4) < i*2)
 			bitonic_merge(id, A, i*2, true);
+
 		barrier(CLK_GLOBAL_MEM_FENCE);
 	}
 	
@@ -184,20 +185,23 @@ __kernel void bitonic_local(__global const int* in, __global int* out, __local i
 // REDUCE_MIN_LOCAL
 __kernel void reduce_min(__global const int* in, __global int* out, __local int* scratch)
 {
+	int id = get_global_id(0);
 	int lid = get_local_id(0);
 	int N = get_local_size(0);
-	int offset = N * lid;
 
-	scratch[lid] = in[get_global_id(0)];
+	scratch[lid] = in[id];
+
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	for (int i = 1; i < N; i++)
+	for (int i = 1; i < N; i *= 2)
 	{
-		if (in[offset+i] < scratch[lid])
-			scratch[lid] = in[offset+i];
+		if (in[lid+i] < scratch[lid])
+			scratch[lid] = in[lid+i];
+
+		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 
-	if (lid == 0)
+	if (!lid)
 		atomic_min(&out[0], scratch[lid]);
 }
 
@@ -208,6 +212,7 @@ __kernel void reduce_min_global(__global const int* in, __global int* out)
 	int N = get_local_size(0);
 
 	out[id] = in[id];
+
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	for (int i = 1; i < N; i++)
@@ -222,20 +227,23 @@ __kernel void reduce_min_global(__global const int* in, __global int* out)
 // REDUCE_MAX_LOCAL
 __kernel void reduce_max(__global const int* in, __global int* out, __local int* scratch)
 {
+	int id = get_global_id(0);
 	int lid = get_local_id(0);
 	int N = get_local_size(0);
-	int offset = N * lid;
 
-	scratch[lid] = in[get_global_id(0)];
+	scratch[lid] = in[id];
+
 	barrier(CLK_LOCAL_MEM_FENCE);
 
-	for (int i = 1; i < N; i++)
+	for (int i = 1; i < N; i *= 2)
 	{
-		if (in[offset+i] > scratch[lid])
-			scratch[lid] = in[offset+i];
+		if (in[lid+i] > scratch[lid])
+			scratch[lid] = in[lid+i];
+
+		barrier(CLK_LOCAL_MEM_FENCE);
 	}
 
-	if (lid == 0)
+	if (!lid)
 		atomic_max(&out[0], scratch[lid]);
 }
 
@@ -246,6 +254,7 @@ __kernel void reduce_max_global(__global const int* in, __global int* out)
 	int N = get_local_size(0);
 
 	out[id] = in[id];
+
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	for (int i = 1; i < N; i++)

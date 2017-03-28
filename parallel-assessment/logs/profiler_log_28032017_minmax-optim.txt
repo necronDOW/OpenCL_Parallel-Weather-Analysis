@@ -1,0 +1,14 @@
+Kernel (reduce_min_global) execution time [ns]: 
+	Queued 24384
+	Submitted 113088
+	Executed 813056
+	Total 950528
+22:39:55 28/3/2017
+
+Kernel (reduce_min) execution time [ns]: 
+	Queued 25184
+	Submitted 105216
+	Executed 605856
+	Total 736256
+22:39:56 28/3/2017
+
