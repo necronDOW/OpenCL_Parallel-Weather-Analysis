@@ -101,7 +101,7 @@ template<typename T>
 void CLResize(cl::Kernel kernel, T*& arr, size_t& size)
 {
 	cl::Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
-	size_t pref_size = (max_wg_size) ? kernel.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device) / 2
+	size_t pref_size = (max_wg_size) ? kernel.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device)
 		: kernel.getWorkGroupInfo<CL_KERNEL_PREFERRED_WORK_GROUP_SIZE_MULTIPLE>(device);
 
 	size_t padding_size = size % pref_size;
@@ -224,9 +224,9 @@ void Variance(T*& inbuf, T*& outbuf, size_t& len, size_t original_len, T mean)
 }
 
 template<typename T>
-void BitonicSort(T*& inbuf, size_t& len, size_t original_len)
+void Sort(T*& inbuf, size_t& len, size_t original_len)
 {
-	std::string kernel_id = "sort_bitonic";
+	std::string kernel_id = "quick_sort";
 	ConcatKernelID(*inbuf, kernel_id);
 
 	timer::Start();
@@ -235,9 +235,10 @@ void BitonicSort(T*& inbuf, size_t& len, size_t original_len)
 	CheckResize(kernel, inbuf, len, original_len);
 	size_t data_size = len * sizeof(T);
 
-	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer = EnqueueBuffer(kernel, 0, CL_MEM_READ_WRITE, inbuf, data_size);
+	kernel.setArg(1, cl::Local(local_size * sizeof(T)));
 
-	ProfiledExecution(kernel, buffer_A, data_size, inbuf, len, kernel_id.c_str());
+	ProfiledExecution(kernel, buffer, data_size, inbuf, len, kernel_id.c_str());
 }
 
 #endif

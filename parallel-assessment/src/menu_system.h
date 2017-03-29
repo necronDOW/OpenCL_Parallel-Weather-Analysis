@@ -96,6 +96,7 @@ inline void InitMenus()
 	menu_system->AddScreenOption(0, "Find Maximum");
 	menu_system->AddScreenOption(0, "Find Mean");
 	menu_system->AddScreenOption(0, "Find Standard Deviation");
+	menu_system->AddScreenOption(0, "Sort Data Set");
 	menu_system->AddScreenOption(0, "Toggle Work Group Size");
 	menu_system->AddScreenOption(0, "Choose Optimization Mode");
 	menu_system->AddScreenOption(0, "Exit");
@@ -164,11 +165,16 @@ inline void MainMenu(T*& A, T*& B, size_t& base_size, size_t original_size, bool
 			printf("Standard Deviation: %.3f\n\n", sqrt(B[0] / division));
 			break;
 		case 5:
+			Sort(A, base_size, original_size);
+			for (int i = 0; i < local_size; i++)
+				std::cout << A[i] << std::endl;
+			break;
+		case 6:
 			max_wg_size = !max_wg_size;
 			wg_size_changed = true;
 			printf("Work Group Size = %s\n\n", (max_wg_size) ? "MAX" : "MIN");
 			break;
-		case 6:
+		case 7:
 			OptimizeMenu();
 			printf("Optimize Mode = %s\n\n", (optimize_flag == Performance) ? "PERFORMANCE" : "PRECISION");
 			break;

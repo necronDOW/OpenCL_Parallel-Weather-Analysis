@@ -88,7 +88,7 @@ inline void InitData(const char* dir, double*& out_arr, size_t& out_size)
 int main(int argc, char **argv) {
 	int platform_id = 0;
 	int device_id = 0;
-	char* file_dir = "temp_lincolnshire.txt";
+	char* file_dir = "temp_lincolnshire_32.txt";
 
 	for (int i = 1; i < argc; i++)
 	{
