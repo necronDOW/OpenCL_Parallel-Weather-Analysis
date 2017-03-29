@@ -165,9 +165,7 @@ inline void MainMenu(T*& A, T*& B, size_t& base_size, size_t original_size, bool
 			printf("Standard Deviation: %.3f\n\n", sqrt(B[0] / division));
 			break;
 		case 5:
-			Sort(A, base_size, original_size);
-			for (int i = 0; i < local_size; i++)
-				std::cout << A[i] << std::endl;
+			Sort(A, B, base_size, original_size);
 			break;
 		case 6:
 			max_wg_size = !max_wg_size;

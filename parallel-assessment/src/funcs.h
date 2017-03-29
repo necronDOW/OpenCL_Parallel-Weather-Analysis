@@ -56,6 +56,18 @@ void Resize(T*& arr, size_t& size, int add_size)
 	arr = new_arr;
 }
 
+template<typename T>
+bool Sorted(T*& arr, size_t size)
+{
+	for (int i = 0; i < size - 1; i++)
+	{
+		if (arr[i] > arr[i+1])
+			return false;
+	}
+
+	return true;
+}
+
 // ------------------------------------------------------------------------ Parallel Functions ------------------------------------------------------------------------ //
 
 cl::Context context;
@@ -92,9 +104,9 @@ void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size,
 	queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(len), cl::NDRange(local_size), NULL, &prof_event);
 	queue.enqueueReadBuffer(buffer, CL_TRUE, 0, outbuf_size, &outbuf[0]);
 
-	long long ex_time_total = timer::Stop(profiler_resolution);
-	long long ex_time = prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-	PrintProfilerInfo(kernel_name, ex_time, &prof_event, ex_time_total);
+	//long long ex_time_total = timer::Stop(profiler_resolution);
+	//long long ex_time = prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+	//PrintProfilerInfo(kernel_name, ex_time, &prof_event, ex_time_total);
 }
 
 template<typename T>
@@ -224,21 +236,37 @@ void Variance(T*& inbuf, T*& outbuf, size_t& len, size_t original_len, T mean)
 }
 
 template<typename T>
-void Sort(T*& inbuf, size_t& len, size_t original_len)
+void Sort(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
 {
-	std::string kernel_id = "quick_sort";
+	std::string kernel_id = "bitonic_local";
 	ConcatKernelID(*inbuf, kernel_id);
 
 	timer::Start();
 	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	CheckResize(kernel, inbuf, len, original_len);
+	outbuf = new T[len];
 	size_t data_size = len * sizeof(T);
 
-	cl::Buffer buffer = EnqueueBuffer(kernel, 0, CL_MEM_READ_WRITE, inbuf, data_size);
-	kernel.setArg(1, cl::Local(local_size * sizeof(T)));
+	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	kernel.setArg(2, cl::Local(local_size * sizeof(T)));
+	kernel.setArg(3, 0);
 
-	ProfiledExecution(kernel, buffer, data_size, inbuf, len, kernel_id.c_str());
+	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id.c_str());
+
+	int i = 1;
+	while (!Sorted(outbuf, len))
+	{
+		buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, outbuf, data_size);
+		buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+		kernel.setArg(2, cl::Local(local_size * sizeof(T)));
+		kernel.setArg(3, (i++ % 2));
+
+		ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id.c_str());
+	}
+
+	std::cout << timer::Stop(PROF_NS) << std::endl;
 }
 
 #endif

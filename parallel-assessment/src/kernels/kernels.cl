@@ -152,9 +152,54 @@ __kernel void sum_sqr_diff_INT(__global const int* in, __global int* out, __loca
 }
 
 // ------------------------------------------ SORT ------------------------------------------ //
-// QUICK_SORT
-//#define swap(a,b) (int t = a; a = b; b = t;)
+// BITONIC_SORT
+__kernel void bitonic_local_INT(__global int* in, __global int* out, __local int* scratch, int merge)
+{
+	int id = get_global_id(0);
+	int lid = get_local_id(0);
+	int gid = get_group_id(0);
+	int N = get_local_size(0);
 
+	int max_group = (get_global_size(0) / N) - 1;
+	int offset = (N/2) * merge;
+
+	if (merge && gid == 0)
+	{
+		out[id] = in[id];
+		barrier(CLK_GLOBAL_MEM_FENCE);
+	}
+
+	scratch[lid] = in[id+offset];
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	for (int l=1; l<N; l<<=1)
+	{
+		bool direction = ((lid & (l<<1)) != 0);
+
+		for (int inc=l; inc>0; inc>>=1)
+		{
+			int j = lid ^ inc;
+			int i_data = scratch[lid];
+			int j_data = scratch[j];
+
+			bool smaller = (j_data < i_data) || ( j_data == i_data && j < lid);
+			bool swap = smaller ^ (j < lid) ^ direction;
+
+			barrier(CLK_LOCAL_MEM_FENCE);
+
+			scratch[lid] = (swap) ? j_data : i_data;
+			barrier(CLK_LOCAL_MEM_FENCE);
+		}
+	}
+
+	out[id+offset] = scratch[lid];
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	if (merge && gid == max_group)
+		out[id+offset] = in[id+offset];
+}
+
+// QUICK_SORT
 __kernel void quick_sort_INT(__global int* data, __local int* scratch)
 {
 	int id = get_global_id(0);
