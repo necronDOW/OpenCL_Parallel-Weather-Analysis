@@ -105,19 +105,26 @@ int main(int argc, char **argv) {
 		InitCL(platform_id, device_id);
 		InitMenus();
 
-		double* init_A;
+		int *A, *B;
+		double *A_f, *B_f;
+
 		size_t base_size = 0;
-		InitData(std::string(data_path + file_dir).c_str(), init_A, base_size);
+		InitData(std::string(data_path + file_dir).c_str(), A_f, base_size);
 
 		size_t original_size = base_size;
-		int* A = convert(init_A, base_size, 10);
-		double* B = new double[base_size];
+		A = convert(A_f, base_size, 10);
 
 		std::cout << std::endl;
 		
 		bool finished = false;
 		while (!finished)
-			MainMenu(init_A, B, base_size, original_size, finished);
+		{
+			switch (optimize_flag)
+			{
+				case Performance: MainMenu(A, B, base_size, original_size, finished); break;
+				case Precision: MainMenu(A_f, B_f, base_size, original_size, finished); break;
+			}
+		}
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

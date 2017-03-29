@@ -97,11 +97,16 @@ inline void InitMenus()
 	menu_system->AddScreenOption(0, "Find Mean");
 	menu_system->AddScreenOption(0, "Find Standard Deviation");
 	menu_system->AddScreenOption(0, "Toggle Work Group Size");
+	menu_system->AddScreenOption(0, "Choose Optimization Mode");
 	menu_system->AddScreenOption(0, "Exit");
 
 	menu_system->AddScreen("Operate using Global or Local memory?");
 	menu_system->AddScreenOption(1, "Global");
 	menu_system->AddScreenOption(1, "Local");
+
+	menu_system->AddScreen("What would you like to optimize for?");
+	menu_system->AddScreenOption(2, "Performance");
+	menu_system->AddScreenOption(2, "Precision");
 }
 
 template<typename T>
@@ -122,6 +127,18 @@ void MinMaxMenu(T*& A, T*& B, size_t base_size, double division, bool dir)
 			LocalMinMax(A, B, base_size, dir);
 			printf(text, B[0] / division);
 			break;
+	}
+}
+
+void OptimizeMenu()
+{
+	menu_system->ShowScreen(2);
+
+	int selection = menu_system->GetScreenOptionSelection();
+	switch (selection)
+	{
+		case 1: optimize_flag = Performance; break;
+		case 2: optimize_flag = Precision; break;
 	}
 }
 
@@ -149,6 +166,10 @@ inline void MainMenu(T*& A, T*& B, size_t base_size, size_t original_size, bool&
 		case 5:
 			max_wg_size = !max_wg_size;
 			printf("Work Group Size = %s\n\n", (max_wg_size) ? "MAX" : "MIN");
+			break;
+		case 6:
+			OptimizeMenu();
+			printf("Optimize Mode = %s\n\n", (optimize_flag == Performance) ? "PERFORMANCE" : "PRECISION");
 			break;
 		default:
 			finished = true;

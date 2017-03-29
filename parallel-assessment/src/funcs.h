@@ -34,7 +34,7 @@ double* convert(int* arr, size_t size, int multiplier)
 }
 
 template<typename T>
-double mean(T value, double size)
+T mean(T value, double size)
 {
 	return value / size;
 }
@@ -61,6 +61,13 @@ cl::Program program;
 bool max_wg_size = false;
 size_t local_size;
 ProfilingResolution profiler_resolution = PROF_NS;
+
+enum OptimizeFlags
+{
+	Performance,
+	Precision
+};
+OptimizeFlags optimize_flag = Performance;
 
 void PrintProfilerInfo(std::string kernel_id, size_t ex_time, const cl::Event* event = nullptr)
 {
