@@ -73,7 +73,8 @@ void PrintProfilerInfo(std::string kernel_id, size_t ex_time, const cl::Event* e
 	winstr::Write(output.c_str());
 }
 
-void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, PRECISION*& outbuf, size_t len, const char* kernel_name)
+template<typename T>
+void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, T*& outbuf, size_t len, const char* kernel_name)
 {
 	cl::Event prof_event;
 	queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(len), cl::NDRange(local_size), NULL, &prof_event);
@@ -96,7 +97,8 @@ size_t CLResize(cl::Kernel kernel, PRECISION*& arr, size_t& size)
 	return pref_size;
 }
 
-cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECISION* data, size_t data_size)
+template<typename T>
+cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, T* data, size_t data_size)
 {
 	cl::Buffer buffer(context, mem_mode, data_size);
 	
@@ -110,18 +112,18 @@ cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, PRECISI
 
 void Sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
 {
-	const char* kernel_id = "reduce_add";
+	const char* kernel_id = "reduce_sum";
 	cl::Kernel kernel = cl::Kernel(program, kernel_id);
 
 	local_size = CLResize(kernel, inbuf, len);
-	outbuf = new PRECISION[len];
+	outbuf = new PRECISION[1];
 	size_t data_size = len * sizeof(PRECISION);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(PRECISION));
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
-	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_B, sizeof(PRECISION), outbuf, len, kernel_id);
 }
 
 void LocalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
@@ -130,14 +132,14 @@ void LocalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
 	cl::Kernel kernel = cl::Kernel(program, kernel_id);
 
 	local_size = CLResize(kernel, inbuf, len);
-	outbuf = new PRECISION[len];
+	outbuf = new PRECISION[1];
 	size_t data_size = len * sizeof(PRECISION);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(PRECISION));
 	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
 
-	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_B, sizeof(PRECISION), outbuf, len, kernel_id);
 }
 
 void GlobalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
@@ -153,6 +155,25 @@ void GlobalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
 	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 
 	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
+}
+
+void Variance(PRECISION inbuf[], PRECISION*& outbuf, size_t len, int mean)
+{
+	const char* kernel_id = "sum_sqr_diff";
+	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+
+	local_size = CLResize(kernel, inbuf, len);
+	outbuf = new PRECISION[1];
+	size_t data_size = len * sizeof(PRECISION);
+
+	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(PRECISION));
+	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
+	kernel.setArg(3, mean);
+
+	ProfiledExecution(kernel, buffer_B, sizeof(PRECISION), outbuf, len, kernel_id);
+
+	outbuf[0] /= len;
 }
 
 void BitonicSort(PRECISION*& inbuf, size_t len)

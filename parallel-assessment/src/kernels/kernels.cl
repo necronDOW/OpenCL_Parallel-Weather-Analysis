@@ -1,10 +1,15 @@
+#pragma OPENCL EXTENSION cl_khr_int64_base_atomics: enable
+
 // ------------------------------------------------------------------------------------------------------//
 // ------------------------------------------ WORKSHOP KERNELS ------------------------------------------//
 // ------------------------------------------------------------------------------------------------------//
 
+typedef int T;
+typedef long L;
+
 // ------------------------------------------ REDUCTION ------------------------------------------ //
 // W_REDUCTION
-__kernel void reduce_add(__global const int* A, __global int* B, __local int* scratch)
+__kernel void reduce_sum(__global const T* A, __global T* B, __local T* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -28,7 +33,7 @@ __kernel void reduce_add(__global const int* A, __global int* B, __local int* sc
 
 // ------------------------------------------ BITONIC SORTS ------------------------------------------ //
 // W_CMPXCHG
-void cmpxchg(__global int* A, __global int* B, bool dir)
+void cmpxchg(__global T* A, __global T* B, bool dir)
 {
 	if ((!dir && *A > *B) || (dir && *A < *B))
 	{
@@ -39,7 +44,7 @@ void cmpxchg(__global int* A, __global int* B, bool dir)
 }
 
 // W_BITONIC_MERGE
-void bitonic_merge(int id, __global int* A, int N, bool dir)
+void bitonic_merge(int id, __global T* A, int N, bool dir)
 {
 	for (int i = N/2; i > 0; i /= 2)
 	{
@@ -51,7 +56,7 @@ void bitonic_merge(int id, __global int* A, int N, bool dir)
 }
 
 // W_BitonicSort
-__kernel void sort_bitonic(__global int* A)
+__kernel void sort_bitonic(__global T* A)
 {
 	int id = get_global_id(0);
 	int N = get_global_size(0);
@@ -71,7 +76,7 @@ __kernel void sort_bitonic(__global int* A)
 
 // ------------------------------------------ MISC KERNELS ------------------------------------------ //
 // W_SIMPLE_HISTOGRAM
-__kernel void hist_simple(__global const int* A, __global int* H) { 
+__kernel void hist_simple(__global const T* A, __global T* H) { 
 	int id = get_global_id(0);
 
 	int bin_index = A[id];
@@ -80,7 +85,7 @@ __kernel void hist_simple(__global const int* A, __global int* H) {
 }
 
 // W_SCAN_ADD
-__kernel void scan_add(__global const int* A, __global int* B, __local int* scratch_1, __local int* scratch_2)
+__kernel void scan_add(__global const T* A, __global T* B, __local T* scratch_1, __local T* scratch_2)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -109,14 +114,14 @@ __kernel void scan_add(__global const int* A, __global int* B, __local int* scra
 }
 
 // W_BLOCK_SUM
-__kernel void block_sum(__global const int* A, __global int* B, int local_size)
+__kernel void block_sum(__global const T* A, __global T* B, int local_size)
 {
 	int id = get_global_id(0);
 	B[id] = A[(id+1)*local_size-1];
 }
 
 // W_SCAN_ADD_ATOMIC
-__kernel void scan_add_atomic(__global int* A, __global int* B)
+__kernel void scan_add_atomic(__global T* A, __global T* B)
 {
 	int id = get_global_id(0);
 	int N = get_global_size(0);
@@ -125,7 +130,7 @@ __kernel void scan_add_atomic(__global int* A, __global int* B)
 }
 
 // W_SCAN_ADD_ADJUST
-__kernel void scan_add_adjust(__global int* A, __global const int* B)
+__kernel void scan_add_adjust(__global T* A, __global const T* B)
 {
 	int id = get_global_id(0);
 	int gid = get_group_id(0);
@@ -147,7 +152,7 @@ __kernel void scan_add_adjust(__global int* A, __global const int* B)
 	#define makeData(k,v) (k)
 #endif
 
-__kernel void bitonic_local(__global const int* in, __global int* out, __local int* cache)
+__kernel void bitonic_local(__global const T* in, __global T* out, __local T* cache)
 {
 	int lid = get_local_id(0);
 	int wg = get_local_size(0);
@@ -183,7 +188,7 @@ __kernel void bitonic_local(__global const int* in, __global int* out, __local i
 
 // ------------------------------------------ TWO-STAGE_REDUCTION ------------------------------------------ //
 // REDUCE_MIN_LOCAL
-__kernel void reduce_min(__global const int* in, __global int* out, __local int* scratch)
+__kernel void reduce_min(__global const T* in, __global T* out, __local T* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -206,7 +211,7 @@ __kernel void reduce_min(__global const int* in, __global int* out, __local int*
 }
 
 // REDUCE_MIN_GLOBAL
-__kernel void reduce_min_global(__global const int* in, __global int* out)
+__kernel void reduce_min_global(__global const T* in, __global T* out)
 {
 	int id = get_global_id(0);
 	int N = get_local_size(0);
@@ -215,7 +220,7 @@ __kernel void reduce_min_global(__global const int* in, __global int* out)
 
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	for (int i = 1; i < N; i++)
+	for (int i = 1; i < N; i *= 2)
 	{
 		if (in[id+i] < out[id])
 			out[id] = in[id+i];
@@ -225,7 +230,7 @@ __kernel void reduce_min_global(__global const int* in, __global int* out)
 }
 
 // REDUCE_MAX_LOCAL
-__kernel void reduce_max(__global const int* in, __global int* out, __local int* scratch)
+__kernel void reduce_max(__global const T* in, __global T* out, __local T* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -248,7 +253,7 @@ __kernel void reduce_max(__global const int* in, __global int* out, __local int*
 }
 
 // REDUCE_MAX_GLOBAL
-__kernel void reduce_max_global(__global const int* in, __global int* out)
+__kernel void reduce_max_global(__global const T* in, __global T* out)
 {
 	int id = get_global_id(0);
 	int N = get_local_size(0);
@@ -257,11 +262,34 @@ __kernel void reduce_max_global(__global const int* in, __global int* out)
 
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
-	for (int i = 1; i < N; i++)
+	for (int i = 1; i < N; i *= 2)
 	{
 		if (in[id+i] > out[id])
 			out[id] = in[id+i];
 	}
 
 	atomic_max(&out[0], out[id]);
+}
+
+// ------------------------------------------ VARIANCE ------------------------------------------ //
+__kernel void sum_sqr_diff(__global const T* in, __global T* out, __local T* scratch, int mean)
+{
+	int id = get_global_id(0);
+	int lid = get_local_id(0);
+	int N = get_local_size(0);
+
+	int diff = (in[id] - mean);
+	scratch[lid] = (diff * diff) / 10;
+
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	for (int i = 1; i < N; i *= 2)
+	{
+		scratch[lid] += scratch[lid + i];
+
+		barrier(CLK_LOCAL_MEM_FENCE);
+	}
+
+	if (!lid)
+		atomic_add(&out[0], scratch[lid]);
 }

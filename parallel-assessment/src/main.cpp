@@ -117,10 +117,7 @@ int main(int argc, char **argv) {
 		
 		bool finished = false;
 		while (!finished)
-		{
-			delete[] B;
 			MainMenu(A, B, base_size, original_size, finished);
-		}
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

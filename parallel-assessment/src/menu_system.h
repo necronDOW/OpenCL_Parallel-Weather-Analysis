@@ -95,6 +95,7 @@ inline void InitMenus()
 	menu_system->AddScreenOption(0, "Find Minimum");
 	menu_system->AddScreenOption(0, "Find Maximum");
 	menu_system->AddScreenOption(0, "Find Mean");
+	menu_system->AddScreenOption(0, "Find Standard Deviation");
 	menu_system->AddScreenOption(0, "Toggle Work Group Size");
 	menu_system->AddScreenOption(0, "Exit");
 
@@ -126,6 +127,7 @@ void MinMaxMenu(PRECISION*& A, PRECISION*& B, size_t base_size, bool dir)
 inline void MainMenu(PRECISION*& A, PRECISION*& B, size_t base_size, size_t original_size, bool& finished)
 {
 	menu_system->ShowScreen(0);
+	float std_dev;
 
 	int selection = menu_system->GetScreenOptionSelection();
 	switch (selection)
@@ -138,6 +140,11 @@ inline void MainMenu(PRECISION*& A, PRECISION*& B, size_t base_size, size_t orig
 			printf("Mean: %.5f\n\n", mean(B[0] / 10.0, original_size));
 			break;
 		case 4:
+			Sum(A, B, base_size);
+			Variance(A, B, base_size, mean(B[0], original_size));
+			printf("Standard Deviation: %.3f\n\n", sqrt(B[0] / 10.0));
+			break;
+		case 5:
 			max_wg_size = !max_wg_size;
 			printf("Work Group Size = %s\n\n", (max_wg_size) ? "MAX" : "MIN");
 			break;
