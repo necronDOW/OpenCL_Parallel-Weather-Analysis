@@ -14,8 +14,6 @@
 
 #include "windows_fileread.h"
 
-typedef int PRECISION;
-
 // ------------------------------------------------------------------------ Helper Functions ------------------------------------------------------------------------ //
 
 int* convert(double* arr, size_t size, int multiplier)
@@ -41,12 +39,13 @@ double mean(T value, double size)
 	return value / size;
 }
 
-void Resize(PRECISION*& arr, size_t& size, size_t add_size)
+template<typename T>
+void Resize(T*& arr, size_t& size, size_t add_size)
 {
 	size_t new_size = size + add_size;
-	PRECISION* new_arr = new PRECISION[new_size];
+	T* new_arr = new T[new_size];
 
-	memcpy(new_arr, arr, size * sizeof(PRECISION));
+	memcpy(new_arr, arr, size * sizeof(T));
 	for (int i = size; i < new_size; i++)
 		new_arr[i] = 0;
 
@@ -84,7 +83,8 @@ void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size,
 	PrintProfilerInfo(kernel_name, ex_time, &prof_event);
 }
 
-size_t CLResize(cl::Kernel kernel, PRECISION*& arr, size_t& size)
+template<typename T>
+size_t CLResize(cl::Kernel kernel, T*& arr, size_t& size)
 {
 	cl::Device device = context.getInfo<CL_CONTEXT_DEVICES>()[0];
 	size_t pref_size = (max_wg_size) ? kernel.getWorkGroupInfo<CL_KERNEL_WORK_GROUP_SIZE>(device)
@@ -110,83 +110,102 @@ cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, T* data
 	return buffer;
 }
 
-void Sum(PRECISION inbuf[], PRECISION*& outbuf, size_t len)
+template<typename T> void ConcatKernelID(T type, std::string& original) { original += "_INVALID"; }
+template<> void ConcatKernelID(int type, std::string& original) { original += "_INT"; }
+template<> void ConcatKernelID(double type, std::string& original) { original += "_DOUBLE"; }
+
+template<typename T>
+void Sum(T inbuf[], T*& outbuf, size_t len)
 {
-	const char* kernel_id = "reduce_sum";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+	std::string kernel_id = "reduce_sum";
+	ConcatKernelID(*inbuf, kernel_id);
+
+	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	local_size = CLResize(kernel, inbuf, len);
-	outbuf = new PRECISION[1];
-	size_t data_size = len * sizeof(PRECISION);
+	outbuf = new T[1];
+	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(PRECISION));
-	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(T));
+	kernel.setArg(2, cl::Local(local_size * sizeof(T)));
 
-	ProfiledExecution(kernel, buffer_B, sizeof(PRECISION), outbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_B, sizeof(T), outbuf, len, kernel_id.c_str());
 }
 
-void LocalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
+template<typename T>
+void LocalMinMax(T inbuf[], T*& outbuf, size_t len, bool dir)
 {
-	const char* kernel_id = (dir) ? "reduce_max" : "reduce_min";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+	std::string kernel_id = (dir) ? "reduce_max" : "reduce_min";
+	ConcatKernelID(*inbuf, kernel_id);
+
+	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	local_size = CLResize(kernel, inbuf, len);
-	outbuf = new PRECISION[1];
-	size_t data_size = len * sizeof(PRECISION);
+	outbuf = new T[1];
+	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(PRECISION));
-	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(T));
+	kernel.setArg(2, cl::Local(local_size * sizeof(T)));
 
-	ProfiledExecution(kernel, buffer_B, sizeof(PRECISION), outbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_B, sizeof(T), outbuf, len, kernel_id.c_str());
 }
 
-void GlobalMinMax(PRECISION inbuf[], PRECISION*& outbuf, size_t len, bool dir)
+template<typename T>
+void GlobalMinMax(T inbuf[], T*& outbuf, size_t len, bool dir)
 {
-	const char* kernel_id = (dir) ? "reduce_max_global" : "reduce_min_global";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+	std::string kernel_id = (dir) ? "reduce_max_global" : "reduce_min_global";
+	ConcatKernelID(*inbuf, kernel_id);
+
+	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	local_size = CLResize(kernel, inbuf, len);
-	outbuf = new PRECISION[len];
-	size_t data_size = len * sizeof(PRECISION);
+	outbuf = new T[len];
+	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
 	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
 
-	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id.c_str());
 }
 
-void Variance(PRECISION inbuf[], PRECISION*& outbuf, size_t len, int mean)
+template<typename T>
+void Variance(T inbuf[], T*& outbuf, size_t len, T mean)
 {
-	const char* kernel_id = "sum_sqr_diff";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+	std::string kernel_id = "sum_sqr_diff";
+	ConcatKernelID(*inbuf, kernel_id);
+
+	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	local_size = CLResize(kernel, inbuf, len);
-	outbuf = new PRECISION[1];
-	size_t data_size = len * sizeof(PRECISION);
+	outbuf = new T[1];
+	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
-	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(PRECISION));
-	kernel.setArg(2, cl::Local(local_size * sizeof(PRECISION)));
+	cl::Buffer buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, sizeof(T));
+	kernel.setArg(2, cl::Local(local_size * sizeof(T)));
 	kernel.setArg(3, mean);
 
-	ProfiledExecution(kernel, buffer_B, sizeof(PRECISION), outbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_B, sizeof(T), outbuf, len, kernel_id.c_str());
 
 	outbuf[0] /= len;
 }
 
-void BitonicSort(PRECISION*& inbuf, size_t len)
+template<typename T>
+void BitonicSort(T*& inbuf, size_t len)
 {
-	const char* kernel_id = "sort_bitonic";
-	cl::Kernel kernel = cl::Kernel(program, kernel_id);
+	std::string kernel_id = "sort_bitonic";
+	ConcatKernelID(*inbuf, kernel_id);
+
+	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	local_size = CLResize(kernel, inbuf, len);
-	size_t data_size = len * sizeof(PRECISION);
+	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
 
-	ProfiledExecution(kernel, buffer_A, data_size, inbuf, len, kernel_id);
+	ProfiledExecution(kernel, buffer_A, data_size, inbuf, len, kernel_id.c_str());
 }
 
 #endif

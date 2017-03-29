@@ -110,14 +110,14 @@ int main(int argc, char **argv) {
 		InitData(std::string(data_path + file_dir).c_str(), init_A, base_size);
 
 		size_t original_size = base_size;
-		PRECISION* A = convert(init_A, base_size, 10);
-		PRECISION* B = new PRECISION[base_size];
+		int* A = convert(init_A, base_size, 10);
+		double* B = new double[base_size];
 
 		std::cout << std::endl;
 		
 		bool finished = false;
 		while (!finished)
-			MainMenu(A, B, base_size, original_size, finished);
+			MainMenu(init_A, B, base_size, original_size, finished);
 	}
 	catch (cl::Error err) {
 		std::cerr << "ERROR: " << err.what() << ", " << getErrorString(err.err()) << std::endl;

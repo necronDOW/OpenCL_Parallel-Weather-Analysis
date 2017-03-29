@@ -1,0 +1,42 @@
+Kernel (reduce_min_global_DOUBLE) execution time [ns]: 
+	Queued 31168
+	Submitted 211200
+	Executed 2456000
+	Total 2698368
+9:5:39 29/3/2017
+
+Kernel (reduce_min_DOUBLE) execution time [ns]: 
+	Queued 28544
+	Submitted 109312
+	Executed 2003072
+	Total 2140928
+9:5:41 29/3/2017
+
+Kernel (reduce_max_DOUBLE) execution time [ns]: 
+	Queued 29920
+	Submitted 110080
+	Executed 2002784
+	Total 2142784
+9:5:43 29/3/2017
+
+Kernel (reduce_sum_DOUBLE) execution time [ns]: 
+	Queued 28032
+	Submitted 117664
+	Executed 53638560
+	Total 53784256
+9:5:49 29/3/2017
+
+Kernel (reduce_sum_DOUBLE) execution time [ns]: 
+	Queued 28064
+	Submitted 114848
+	Executed 53742240
+	Total 53885152
+9:5:50 29/3/2017
+
+Kernel (sum_sqr_diff_DOUBLE) execution time [ns]: 
+	Queued 27200
+	Submitted 117152
+	Executed 52579520
+	Total 52723872
+9:5:50 29/3/2017
+
