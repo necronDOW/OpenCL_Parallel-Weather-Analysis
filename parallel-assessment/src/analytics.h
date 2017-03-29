@@ -18,26 +18,32 @@ namespace analytics
 namespace timer
 {
 	std::chrono::time_point<std::chrono::steady_clock> start;
-	unsigned long since_last = 0;
-	unsigned long last_query = 0;
+	long long since_last = 0;
+	long long last_query = 0;
 
-	void Start() { start = std::chrono::high_resolution_clock::now(); }
-	void Stop() { start = std::chrono::time_point<std::chrono::steady_clock>(); }
-	void Reset() { Start(); }
-
-	unsigned long Query(ProfilingResolution resolution)
+	long long Query(ProfilingResolution resolution)
 	{
-		unsigned long new_query = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
+		long long new_query = std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::high_resolution_clock::now() - start).count();
 		since_last = new_query - last_query;
 		last_query = new_query;
 
 		return new_query / resolution;
 	}
-	unsigned long QuerySinceLast(ProfilingResolution resolution)
+	long long QuerySinceLast(ProfilingResolution resolution)
 	{
 		Query(PROF_NS);
 		return since_last / resolution;
 	}
+
+	void Start() { start = std::chrono::high_resolution_clock::now(); }
+	long long Stop(ProfilingResolution resolution = PROF_NULL)
+	{
+		long long query = Query(resolution);
+
+		start = std::chrono::time_point<std::chrono::steady_clock>();
+		return query;
+	}
+	void Reset() { Start(); }
 }
 
 #endif

@@ -201,7 +201,8 @@ enum ProfilingResolution {
 	PROF_NS = 1,
 	PROF_US = 1000,
 	PROF_MS = 1000000,
-	PROF_S = 1000000000
+	PROF_S = 1000000000,
+	PROF_NULL = -1
 };
 
 std::string GetFullProfilingInfo(const cl::Event& evnt, ProfilingResolution resolution) {

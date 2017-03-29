@@ -110,7 +110,7 @@ inline void InitMenus()
 }
 
 template<typename T>
-void MinMaxMenu(T*& A, T*& B, size_t base_size, double division, bool dir)
+void MinMaxMenu(T*& A, T*& B, size_t& base_size, size_t original_size, double division, bool dir)
 {
 	menu_system->ShowScreen(1);
 
@@ -120,11 +120,11 @@ void MinMaxMenu(T*& A, T*& B, size_t base_size, double division, bool dir)
 	switch (selection)
 	{
 		case 1:
-			GlobalMinMax(A, B, base_size, dir);
+			GlobalMinMax(A, B, base_size, original_size, dir);
 			printf(text, B[0] / division);
 			break;
 		case 2:
-			LocalMinMax(A, B, base_size, dir);
+			LocalMinMax(A, B, base_size, original_size, dir);
 			printf(text, B[0] / division);
 			break;
 	}
@@ -143,7 +143,7 @@ void OptimizeMenu()
 }
 
 template<typename T>
-inline void MainMenu(T*& A, T*& B, size_t base_size, size_t original_size, bool& finished)
+inline void MainMenu(T*& A, T*& B, size_t& base_size, size_t original_size, bool& finished)
 {
 	menu_system->ShowScreen(0);
 	double division = (typeid(T) == typeid(int)) ? 10.0 : 1.0;
@@ -152,19 +152,20 @@ inline void MainMenu(T*& A, T*& B, size_t base_size, size_t original_size, bool&
 	switch (selection)
 	{
 		case 1: case 2:
-			MinMaxMenu(A, B, base_size, division, selection - 1);
+			MinMaxMenu(A, B, base_size, original_size, division, selection - 1);
 			break;
 		case 3:
-			Sum(A, B, base_size);
+			Sum(A, B, base_size, original_size);
 			printf("Mean: %.5f\n\n", mean(B[0] / division, original_size));
 			break;
 		case 4:
-			Sum(A, B, base_size);
-			Variance(A, B, base_size, mean(B[0], original_size));
+			Sum(A, B, base_size, original_size);
+			Variance(A, B, base_size, original_size, mean(B[0], original_size));
 			printf("Standard Deviation: %.3f\n\n", sqrt(B[0] / division));
 			break;
 		case 5:
 			max_wg_size = !max_wg_size;
+			wg_size_changed = true;
 			printf("Work Group Size = %s\n\n", (max_wg_size) ? "MAX" : "MIN");
 			break;
 		case 6:
