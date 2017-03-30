@@ -7,6 +7,8 @@ namespace analytics
 {
 	const char* BuildInfo()
 	{
+		// Return the current build state of the application.
+
 		#ifdef _DEBUG
 			return "Build Mode: Debug\n";
 		#else 
@@ -17,6 +19,9 @@ namespace analytics
 
 namespace timer
 {
+	/* This namespace provides a nice wrapped around the chrono library which allows me to query a time step and simply
+	   provide a resolution value, courtasy of OpenCL, to divide the resultant nanosecond value into us, ms and s. */
+
 	std::chrono::time_point<std::chrono::steady_clock> start;
 	long long since_last = 0;
 	long long last_query = 0;

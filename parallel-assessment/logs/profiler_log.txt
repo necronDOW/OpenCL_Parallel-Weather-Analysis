@@ -1,0 +1,224 @@
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 25728
+	Submitted 76640
+	Executed 11264
+	Total 113632
+Total execution time [ns]: 3020989
+14:26:57 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 31008
+	Submitted 159840
+	Executed 455232
+	Total 646080
+Total execution time [ns]: 11939592
+14:27:24 30/3/2017
+
+Kernel (reduce_sum_INT) execution time [ns]: 
+	Queued 29408
+	Submitted 116320
+	Executed 222304
+	Total 368032
+Total execution time [ns]: 3038953
+14:27:32 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 111153664
+	Submitted 185685696
+	Executed 3656813760
+	Total 3953653120
+Total execution time [ns]: 2753447724
+14:51:18 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 115857024
+	Submitted 191512448
+	Executed 3652702080
+	Total 3960071552
+Total execution time [ns]: 2938828349
+14:52:22 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 29824
+	Submitted 221536
+	Executed 837600
+	Total 1088960
+Total execution time [ns]: 12128544
+14:52:40 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 115028416
+	Submitted 189539904
+	Executed 3667004960
+	Total 3971573280
+Total execution time [ns]: 2902754537
+14:53:19 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 29952
+	Submitted 157504
+	Executed 375296
+	Total 562752
+Total execution time [ns]: 6882797
+14:53:24 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 30720
+	Submitted 154336
+	Executed 457216
+	Total 642272
+Total execution time [ns]: 12458649
+14:53:39 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 25888
+	Submitted 83520
+	Executed 13056
+	Total 122464
+Total execution time [ns]: 2780066
+14:55:5 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 771456
+	Submitted 916288
+	Executed 1581120
+	Total 3268864
+Total execution time [ns]: 7903267
+14:55:8 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 23488
+	Submitted 112288
+	Executed 11104
+	Total 146880
+Total execution time [ns]: 870334
+14:55:14 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 24640
+	Submitted 111936
+	Executed 10848
+	Total 147424
+Total execution time [ns]: 2980247
+14:57:26 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 25096960
+	Submitted 25464800
+	Executed 20004288
+	Total 70566048
+Total execution time [ns]: 262864783
+14:57:32 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 24576
+	Submitted 111584
+	Executed 13216
+	Total 149376
+Total execution time [ns]: 830876
+14:57:33 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 28128
+	Submitted 410592
+	Executed 50432
+	Total 489152
+Total execution time [ns]: 3581429
+14:57:50 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 725056
+	Submitted 1109792
+	Executed 1578720
+	Total 3413568
+Total execution time [ns]: 4292542677
+14:58:11 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 23168
+	Submitted 112544
+	Executed 10816
+	Total 146528
+Total execution time [ns]: 791738
+14:58:13 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 25056
+	Submitted 80960
+	Executed 11168
+	Total 117184
+Total execution time [ns]: 2803164
+14:58:35 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 25664
+	Submitted 80128
+	Executed 11072
+	Total 116864
+Total execution time [ns]: 2494232
+14:58:53 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 23072
+	Submitted 80224
+	Executed 13088
+	Total 116384
+Total execution time [ns]: 2609721
+14:58:57 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 30080
+	Submitted 161568
+	Executed 375104
+	Total 566752
+Total execution time [ns]: 12048344
+14:59:20 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 31424
+	Submitted 161984
+	Executed 374304
+	Total 567712
+Total execution time [ns]: 12055402
+15:0:57 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 30080
+	Submitted 158368
+	Executed 457792
+	Total 646240
+Total execution time [ns]: 14488039
+15:1:5 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 30624
+	Submitted 158752
+	Executed 398336
+	Total 587712
+Total execution time [ns]: 11400003
+15:3:6 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 31328
+	Submitted 159008
+	Executed 397440
+	Total 587776
+Total execution time [ns]: 11900454
+15:3:50 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 729280
+	Submitted 1366880
+	Executed 1574688
+	Total 3670848
+Total execution time [ns]: 4293870155
+15:4:33 30/3/2017
+
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 25568
+	Submitted 86144
+	Executed 10912
+	Total 122624
+Total execution time [ns]: 666626
+15:4:36 30/3/2017
+

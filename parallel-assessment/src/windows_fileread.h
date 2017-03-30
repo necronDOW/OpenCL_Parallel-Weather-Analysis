@@ -25,6 +25,9 @@ unsigned int ComputeBytes(const char* dir)
 	return fileStatus.st_size - 1;
 }
 
+/* This function is called when parsing data from a character array, and takes in index values to provide a head start when checking
+   a single one dimensions character array. By doing this, the windows file reading implementation can remain the more optimal solution
+   and N number of floats can be parsed from one sincle dimensional char*. */
 fp_type ParseDouble(const char*& data, unsigned int len, unsigned int& index, int max_len)
 {
 	char* buffer = new char[max_len];
@@ -52,6 +55,9 @@ std::string TimeStamp()
 
 namespace winstr
 {
+	/* These two implementations of QueryLineCount operate in different ways, the second of the two is the quickest by far as it does not rely
+	   upon slow ifstream file reading to operate and calculate the line count. Instead, the second implementation assumes an array has been
+	   provided (read from ReadOptimal?) and counts each '\n' char to get the line count. */
 	size_t QueryLineCount(const char* dir)
 	{
 		char c; size_t size = 0;
@@ -78,6 +84,11 @@ namespace winstr
 		return ++size;
 	}
 
+	/* This file reading implementation makes use of core windows API functionality to achieve impressive speeds. The goal here was to reduce
+	   the time taken to complete what is likely the largest bottleneck of the program as a whole, which is the sequential file reading.
+	   Investigation found that standard ifstream was reading in around ~35s whereas a slightly faster fscanf (seen one function down) solution 
+	   read at ~9s (both debug timings). This reading algorithm managed to read the entire 1.8 million lines from the text file in ~20ms, a 
+	   massive improvement. */
 	char* ReadOptimal(const char* dir, unsigned int& len)
 	{
 		std::cout << "Reading (dir='" << dir << "') ..." << std::endl;
@@ -144,6 +155,10 @@ namespace winstr
 		}
 	}
 
+	/* This function partially relies upon naive assumptions of string length for a given numerical value. However, by doing this
+	   it is possible to parse the input array into another array of floats in around ~500ms in debug with massive performance
+	   boosts when ran in Release. I do not believe this is the fastest option, however it has enough safety checks in place to
+	   ensure the correct values are parsed.*/
 	fp_type* ParseLines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
 		unsigned char current_column = 0;

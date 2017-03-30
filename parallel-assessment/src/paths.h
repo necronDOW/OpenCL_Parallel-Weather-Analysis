@@ -4,6 +4,7 @@
 #include <windows.h>
 #include <iostream>
 
+// Typedef for the floating point type to be used, this can either be double or float in the current state of the program.
 typedef float fp_type;
 
 std::string base_path = "./";
@@ -13,6 +14,7 @@ std::string data_path = "./data/";
 
 void InitPaths()
 {
+	// This function ensures that the correct paths are gathered whether running from Visual Studio or simply from command line.
 	if (!IsDebuggerPresent())
 	{
 		base_path = "../../parallel-assessment/";

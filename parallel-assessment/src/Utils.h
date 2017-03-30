@@ -207,6 +207,7 @@ enum ProfilingResolution {
 
 unsigned long* GetFullProfilingInfoData(const cl::Event& evnt, ProfilingResolution resolution)
 {
+	// Gather the full profiling info and store within an array of size 4, this provides more flexibility when profiling kernels.
 	return new unsigned long[4] {
 		(unsigned long)((evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution),
 		(unsigned long)((evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) / resolution),
@@ -217,6 +218,7 @@ unsigned long* GetFullProfilingInfoData(const cl::Event& evnt, ProfilingResoluti
 
 std::string GetFullProfilingInfo(unsigned long* profiled_info)
 {
+	// Modified to account for the new GetFillProfilingInfoData function, instead accepting an array of profiling information to stream to a string.
 	std::stringstream sstream;
 
 	sstream << "\n\tQueued " << profiled_info[0];

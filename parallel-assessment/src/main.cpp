@@ -19,23 +19,6 @@
 	#endif
 #endif
 
-//int welfords_variance(int data[], int size)
-//{
-//	int N = 0;
-//	int mean = 0;
-//	unsigned int M2 = 0;
-//
-//	for (int i = 0; i < size; i++)
-//	{
-//		N++;
-//		int delta = data[i] - mean;
-//		mean += (delta / N);
-//		M2 += delta*delta;
-//	}
-//
-//	return M2 / (N - 1);
-//}
-
 void PrintHelp() {
 	std::cerr << "Application usage:" << std::endl;
 
@@ -88,7 +71,7 @@ inline void InitData(const char* dir, fp_type*& out_arr, size_t& out_size)
 int main(int argc, char **argv) {
 	int platform_id = 0;
 	int device_id = 0;
-	char* file_dir = "temp_lincolnshire_short.txt";
+	char* file_dir = "temp_lincolnshire.txt";
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -105,12 +88,15 @@ int main(int argc, char **argv) {
 		InitCL(platform_id, device_id);
 		InitMenus();
 
+		// Integer and floating point arrays to account for alternate precision within funcs.h.
 		int *A, *B;
 		fp_type *A_f, *B_f;
 
+		// Initialize all of the data, this reads the file and parses it as floating point numbers.
 		size_t base_size = 0;
 		InitData(std::string(data_path + file_dir).c_str(), A_f, base_size);
 
+		// Convert from the floating point array to integers and store within A.
 		size_t original_size = base_size;
 		A = convert(A_f, base_size, 10);
 
@@ -119,6 +105,7 @@ int main(int argc, char **argv) {
 		bool finished = false;
 		while (!finished)
 		{
+			// Loop to constantly display interactive menu system, for unlimited operations on the given dataset in one runtime.
 			if (optimize_flag == Performance)
 				MainMenu(A, B, base_size, original_size, finished);
 			else if (optimize_flag == Precision)

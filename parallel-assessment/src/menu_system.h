@@ -86,6 +86,10 @@ class MenuSystem
 		}
 };
 
+/* Below is an implementation of the menu system class shown above which allows for the user to interact easily with the program,
+   including a main menu, global/local menu and optimization menu. From the menu system, the user can perform any operation they
+   desire and even modify program runtime variables to operate differently on the data set. */
+
 MenuSystem* menu_system;
 void InitMenus()
 {
