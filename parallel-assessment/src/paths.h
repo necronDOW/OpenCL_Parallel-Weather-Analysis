@@ -4,6 +4,8 @@
 #include <windows.h>
 #include <iostream>
 
+typedef float fp_type;
+
 std::string base_path = "./";
 std::string src_path = "./src/";
 std::string kernel_path = "./src/kernels/";

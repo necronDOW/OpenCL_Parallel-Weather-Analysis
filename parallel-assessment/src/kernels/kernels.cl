@@ -153,7 +153,7 @@ __kernel void sum_sqr_diff_INT(__global const int* in, __global int* out, __loca
 
 // ------------------------------------------ SORT ------------------------------------------ //
 // BITONIC_SORT
-__kernel void bitonic_local_INT(__global int* in, __global int* out, __local int* scratch, int merge)
+__kernel void bitonic_local_INT(__global const int* in, __global int* out, __local int* scratch, int merge)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -161,7 +161,7 @@ __kernel void bitonic_local_INT(__global int* in, __global int* out, __local int
 	int N = get_local_size(0);
 
 	int max_group = (get_global_size(0) / N) - 1;
-	int offset = (N/2) * merge;
+	int offset_id = id + ((N/2) * merge);
 
 	if (merge && gid == 0)
 	{
@@ -169,7 +169,7 @@ __kernel void bitonic_local_INT(__global int* in, __global int* out, __local int
 		barrier(CLK_GLOBAL_MEM_FENCE);
 	}
 
-	scratch[lid] = in[id+offset];
+	scratch[lid] = in[offset_id];
 	barrier(CLK_LOCAL_MEM_FENCE);
 
 	for (int l=1; l<N; l<<=1)
@@ -192,117 +192,57 @@ __kernel void bitonic_local_INT(__global int* in, __global int* out, __local int
 		}
 	}
 
-	out[id+offset] = scratch[lid];
+	out[offset_id] = scratch[lid];
 	barrier(CLK_GLOBAL_MEM_FENCE);
 
 	if (merge && gid == max_group)
-		out[id+offset] = in[id+offset];
-}
-
-// QUICK_SORT
-__kernel void quick_sort_INT(__global int* data, __local int* scratch)
-{
-	int id = get_global_id(0);
-	int lid = get_local_id(0);
-	int end = get_local_size(0)-1;
-
-	scratch[lid] = data[id];
-	barrier(CLK_LOCAL_MEM_FENCE);
-
-	printf("%d\n", scratch[lid]);
-
-	int stack[32];
-	int top = -1;
-
-	stack[++top] = lid;
-	stack[++top] = end;
-
-	while (top >= 0)
-	{
-		end = stack[top--];
-		lid = stack[top--];
-
-		// partition
-		int x = scratch[end];
-		int i = (lid-1);
-
-		for (int j = lid; j <= end-1; j++)
-		{
-			if (scratch[j] <= x)
-			{
-				i++;
-
-				int t = scratch[i];
-				scratch[i] = scratch[j];
-				scratch[j] = t;
-			}
-		}
-
-		int t = scratch[i+1];
-		scratch[i+1] = scratch[end];
-		scratch[end] = t;
-
-		int p = i+1;
-
-		if (p-1 > lid)
-		{
-			stack[++top] = lid;
-			stack[++top] = p-1;
-		}
-
-		if (p+1 < end)
-		{
-			stack[++top] = p+1;
-			stack[++top] = end;
-		}
-	}
-
-	barrier(CLK_LOCAL_MEM_FENCE);
-	data[id] = scratch[lid];
+		out[offset_id] = in[offset_id];
 }
 
 // #################################################################################################### //
 // ########################################## DOUBLE KERNELS ########################################## //
 // #################################################################################################### //
 
+typedef float fp_type;
+
 // ----------------------------------------------------------------------------------------------------//
 // ------------------------------------------ ATOMIC KERNELS ------------------------------------------//
 // ----------------------------------------------------------------------------------------------------//
 
-void atomic_add_f(__global double* dst, double delta)
+void atomic_add_f(volatile __global fp_type* dst, const fp_type delta)
 {
-	union { double f; ulong ul; } old;
-	union { double f; ulong ul; } new;
+	union { fp_type f; uint i; } oldVal;
+	union { fp_type f; uint i; } newVal;
 	do
 	{ 
-		old.f = *dst; 
-		new.f = old.f + delta; 
+		oldVal.f = *dst; 
+		newVal.f = oldVal.f + delta; 
 	}
-	while (atom_cmpxchg((volatile __global ulong*)dst, old.ul, new.ul) != old.ul);
+	while (atom_cmpxchg((volatile __global uint*)dst, oldVal.i, newVal.i) != oldVal.i);
 }
 
-void atomic_max_f(__global double* a, double b)
+void atomic_max_f(volatile __global fp_type* a, const fp_type b)
 {
-	union { double f; ulong ul; } old;
-	union { double f; ulong ul; } new;
+	union { fp_type f; uint i; } oldVal;
+	union { fp_type f; uint i; } newVal;
 	do
 	{ 
-		old.f = *a; 
-		new.f = max(old.f, b); 
+		oldVal.f = *a; 
+		newVal.f = max(oldVal.f, b); 
 	}
-	while (atom_cmpxchg((volatile __global ulong*)a, old.ul, new.ul) != old.ul);
+	while (atom_cmpxchg((volatile __global uint*)a, oldVal.i, newVal.i) != oldVal.i);
 }
 
-void atomic_min_f(__global double* a, double b)
+void atomic_min_f(volatile __global fp_type* a, const fp_type b)
 {
-	union { double f; ulong ul; } old;
-	union { double f; ulong ul; } new;
+	union { fp_type f; uint i; } oldVal;
+	union { fp_type f; uint i; } newVal;
 	do
 	{ 
-		old.f = *a; 
-		new.f = min(old.f, b); 
+		oldVal.f = *a; 
+		newVal.f = min(oldVal.f, b); 
 	}
-	while (atom_cmpxchg((volatile __global ulong*)a, old.ul, new.ul) != old.ul);
+	while (atom_cmpxchg((volatile __global uint*)a, oldVal.i, newVal.i) != oldVal.i);
 }
 
 // ------------------------------------------------------------------------------------------------------//
@@ -311,7 +251,7 @@ void atomic_min_f(__global double* a, double b)
 
 // ------------------------------------------ REDUCTION ------------------------------------------ //
 // W_REDUCTION
-__kernel void reduce_sum_DOUBLE(__global const double* in, __global double* out, __local double* scratch)
+__kernel void reduce_sum_FP(__global const fp_type* in, __global fp_type* out, __local fp_type* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -338,7 +278,7 @@ __kernel void reduce_sum_DOUBLE(__global const double* in, __global double* out,
 
 // ------------------------------------------ TWO-STAGE_REDUCTION ------------------------------------------ //
 // REDUCE_MIN_LOCAL
-__kernel void reduce_min_DOUBLE(__global const double* in, __global double* out, __local double* scratch)
+__kernel void reduce_min_FP(__global const fp_type* in, __global fp_type* out, __local fp_type* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -351,8 +291,8 @@ __kernel void reduce_min_DOUBLE(__global const double* in, __global double* out,
 	{
 		if (lid < i)
 		{
-			int other = scratch[lid+i];
-			int mine = scratch[lid];
+			fp_type other = scratch[lid+i];
+			fp_type mine = scratch[lid];
 			scratch[lid] = (mine < other) ? mine : other;
 		}
 
@@ -364,7 +304,7 @@ __kernel void reduce_min_DOUBLE(__global const double* in, __global double* out,
 }
 
 // REDUCE_MIN_GLOBAL
-__kernel void reduce_min_global_DOUBLE(__global const double* in, __global double* out)
+__kernel void reduce_min_global_FP(__global const fp_type* in, __global fp_type* out)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -377,8 +317,8 @@ __kernel void reduce_min_global_DOUBLE(__global const double* in, __global doubl
 	{
 		if (lid < i)
 		{
-			int other = in[id+i];
-			int mine = out[id];
+			fp_type other = in[id+i];
+			fp_type mine = out[id];
 			out[id] = (mine < other) ? mine : other;
 		}
 
@@ -389,7 +329,7 @@ __kernel void reduce_min_global_DOUBLE(__global const double* in, __global doubl
 }
 
 // REDUCE_MAX_LOCAL
-__kernel void reduce_max_DOUBLE(__global const double* in, __global double* out, __local double* scratch)
+__kernel void reduce_max_FP(__global const fp_type* in, __global fp_type* out, __local fp_type* scratch)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -402,8 +342,8 @@ __kernel void reduce_max_DOUBLE(__global const double* in, __global double* out,
 	{
 		if (lid < i)
 		{
-			int other = scratch[lid+i];
-			int mine = scratch[lid];
+			fp_type other = scratch[lid+i];
+			fp_type mine = scratch[lid];
 			scratch[lid] = (mine > other) ? mine : other;
 		}
 
@@ -415,7 +355,7 @@ __kernel void reduce_max_DOUBLE(__global const double* in, __global double* out,
 }
 
 // REDUCE_MAX_GLOBAL
-__kernel void reduce_max_global_DOUBLE(__global const double* in, __global double* out)
+__kernel void reduce_max_global_FP(__global const fp_type* in, __global fp_type* out)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
@@ -428,8 +368,8 @@ __kernel void reduce_max_global_DOUBLE(__global const double* in, __global doubl
 	{
 		if (lid < i)
 		{
-			int other = in[id+i];
-			int mine = out[id];
+			fp_type other = in[id+i];
+			fp_type mine = out[id];
 			out[id] = (mine > other) ? mine : other;
 		}
 
@@ -441,12 +381,12 @@ __kernel void reduce_max_global_DOUBLE(__global const double* in, __global doubl
 
 // ------------------------------------------ VARIANCE ------------------------------------------ //
 // SUM_SQR_DIFF
-__kernel void sum_sqr_diff_DOUBLE(__global const double* in, __global double* out, __local double* scratch, double mean)
+__kernel void sum_sqr_diff_FP(__global const fp_type* in, __global fp_type* out, __local fp_type* scratch, fp_type mean)
 {
 	int id = get_global_id(0);
 	int lid = get_local_id(0);
 
-	double diff = (in[id] - mean);
+	fp_type diff = (in[id] - mean);
 	scratch[lid] = (diff * diff);
 
 	barrier(CLK_LOCAL_MEM_FENCE);
@@ -461,4 +401,52 @@ __kernel void sum_sqr_diff_DOUBLE(__global const double* in, __global double* ou
 
 	if (!lid)
 		atomic_add_f(&out[0], scratch[lid]);
+}
+
+// ------------------------------------------ SORT ------------------------------------------ //
+// BITONIC_SORT
+__kernel void bitonic_local_FP(__global const fp_type* in, __global fp_type* out, __local fp_type* scratch, int merge)
+{
+	int id = get_global_id(0);
+	int lid = get_local_id(0);
+	int gid = get_group_id(0);
+	int N = get_local_size(0);
+
+	int max_group = (get_global_size(0) / N) - 1;
+	int offset_id = id + ((N/2) * merge);
+
+	if (merge && gid == 0)
+	{
+		out[id] = in[id];
+		barrier(CLK_GLOBAL_MEM_FENCE);
+	}
+
+	scratch[lid] = in[offset_id];
+	barrier(CLK_LOCAL_MEM_FENCE);
+
+	for (int l=1; l<N; l<<=1)
+	{
+		bool direction = ((lid & (l<<1)) != 0);
+
+		for (int inc=l; inc>0; inc>>=1)
+		{
+			int j = lid ^ inc;
+			fp_type i_data = scratch[lid];
+			fp_type j_data = scratch[j];
+
+			bool smaller = (j_data < i_data) || ( j_data == i_data && j < lid);
+			bool swap = smaller ^ (j < lid) ^ direction;
+
+			barrier(CLK_LOCAL_MEM_FENCE);
+
+			scratch[lid] = (swap) ? j_data : i_data;
+			barrier(CLK_LOCAL_MEM_FENCE);
+		}
+	}
+
+	out[offset_id] = scratch[lid];
+	barrier(CLK_GLOBAL_MEM_FENCE);
+
+	if (merge && gid == max_group)
+		out[offset_id] = in[offset_id];
 }

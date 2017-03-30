@@ -25,7 +25,7 @@ unsigned int ComputeBytes(const char* dir)
 	return fileStatus.st_size - 1;
 }
 
-double ParseDouble(const char*& data, unsigned int len, unsigned int& index, int max_len)
+fp_type ParseDouble(const char*& data, unsigned int len, unsigned int& index, int max_len)
 {
 	char* buffer = new char[max_len];
 	for (int i = 0; i < max_len; i++)
@@ -115,9 +115,9 @@ namespace winstr
 		return ReadBuffer;
 	}
 
-	double* Read_fscanf(const char* dir, unsigned int size)
+	fp_type* Read_fscanf(const char* dir, unsigned int size)
 	{
-		double* values = new double[size];
+		fp_type* values = new fp_type[size];
 
 		FILE* stream = fopen(dir, "r");
 		fseek(stream, 0L, SEEK_SET);
@@ -144,11 +144,11 @@ namespace winstr
 		}
 	}
 
-	double* ParseLines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
+	fp_type* ParseLines(const char*& data, unsigned int len, char delimiter, unsigned char column_index, int size)
 	{
 		unsigned char current_column = 0;
 		unsigned int index = 0;
-		double* out_data = new double[size];
+		fp_type* out_data = new fp_type[size];
 
 		for (unsigned int i = 0; i < len; i++)
 		{

@@ -70,7 +70,7 @@ inline void InitCL(int platform_id, int device_id)
 	}
 }
 
-inline void InitData(const char* dir, double*& out_arr, size_t& out_size)
+inline void InitData(const char* dir, fp_type*& out_arr, size_t& out_size)
 {
 	timer::Start();
 	unsigned int len;
@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
 		InitMenus();
 
 		int *A, *B;
-		double *A_f, *B_f;
+		fp_type *A_f, *B_f;
 
 		size_t base_size = 0;
 		InitData(std::string(data_path + file_dir).c_str(), A_f, base_size);

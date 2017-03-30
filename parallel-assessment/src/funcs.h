@@ -16,7 +16,7 @@
 
 // ------------------------------------------------------------------------ Helper Functions ------------------------------------------------------------------------ //
 
-int* convert(double* arr, size_t size, int multiplier)
+int* convert(fp_type* arr, size_t size, int multiplier)
 {
 	int* new_arr = new int[size];
 	for (size_t i = 0; i < size; i++)
@@ -24,9 +24,9 @@ int* convert(double* arr, size_t size, int multiplier)
 
 	return new_arr;
 }
-double* convert(int* arr, size_t size, int multiplier)
+fp_type* convert(int* arr, size_t size, int multiplier)
 {
-	double* new_arr = new double[size];
+	fp_type* new_arr = new fp_type[size];
 	for (size_t i = 0; i < size; i++)
 		new_arr[i] = arr[i] / multiplier;
 
@@ -34,9 +34,16 @@ double* convert(int* arr, size_t size, int multiplier)
 }
 
 template<typename T>
-T mean(T value, double size)
+T mean(T value, float size)
 {
 	return value / size;
+}
+
+template<typename T>
+T source(const T* arr, int size, float indexer)
+{
+	int src_index = size * indexer;
+	return arr[src_index];
 }
 
 template<typename T>
@@ -85,10 +92,10 @@ enum OptimizeFlags
 };
 OptimizeFlags optimize_flag = Performance;
 
-void PrintProfilerInfo(std::string kernel_id, size_t ex_time, const cl::Event* event = nullptr, size_t ex_time_total = 0)
+void PrintProfilerInfo(std::string kernel_id, size_t ex_time, unsigned long* profiled_info, size_t ex_time_total = 0)
 {
 	const char* resolution_str = GetResolutionString(profiler_resolution);
-	std::string profiling_str = (event) ? GetFullProfilingInfo(*event, profiler_resolution) : std::to_string(ex_time);
+	std::string profiling_str = (profiled_info) ? GetFullProfilingInfo(profiled_info) : std::to_string(ex_time);
 	std::string total_execution_str = std::to_string(ex_time_total);
 
 	std::string output = "Kernel (" + kernel_id + ") execution time " + resolution_str + ": " + profiling_str 
@@ -98,15 +105,30 @@ void PrintProfilerInfo(std::string kernel_id, size_t ex_time, const cl::Event* e
 }
 
 template<typename T>
-void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t outbuf_size, T*& outbuf, size_t len, const char* kernel_name)
+void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t arr_size, T*& arr, size_t len, const char* kernel_name)
 {
 	cl::Event prof_event;
 	queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(len), cl::NDRange(local_size), NULL, &prof_event);
-	queue.enqueueReadBuffer(buffer, CL_TRUE, 0, outbuf_size, &outbuf[0]);
+	queue.enqueueReadBuffer(buffer, CL_TRUE, 0, arr_size, &arr[0]);
 
-	//long long ex_time_total = timer::Stop(profiler_resolution);
-	//long long ex_time = prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
-	//PrintProfilerInfo(kernel_name, ex_time, &prof_event, ex_time_total);
+	unsigned long ex_time_total = timer::Stop(profiler_resolution);
+	unsigned long ex_time = prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+	PrintProfilerInfo(kernel_name, ex_time, GetFullProfilingInfoData(prof_event, profiler_resolution), ex_time_total);
+}
+
+template<typename T>
+void CumulativeProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t arr_size, T*& arr, size_t len, unsigned long& ex_time_total, unsigned long& ex_time, unsigned long* profiled_info)
+{
+	cl::Event prof_event;
+	queue.enqueueNDRangeKernel(kernel, cl::NullRange, cl::NDRange(len), cl::NDRange(local_size), NULL, &prof_event);
+	queue.enqueueReadBuffer(buffer, CL_TRUE, 0, arr_size, &arr[0]);
+
+	ex_time_total += timer::QuerySinceLast(profiler_resolution);
+	ex_time += prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
+
+	unsigned long* this_profiled_info = GetFullProfilingInfoData(prof_event, profiler_resolution);
+	for (int i = 0; i < 4; i++)
+		profiled_info[i] += this_profiled_info[i];
 }
 
 template<typename T>
@@ -128,11 +150,13 @@ void CheckResize(cl::Kernel kernel, T*& arr, size_t& size, size_t original_size)
 {
 	if (wg_size_changed)
 	{
-		std::cout << "Resizing Array ..." << std::endl;
+		std::cout << "Resizing Array ... ";
 
 		Resize(arr, size, original_size-size);
 		CLResize(kernel, arr, size);
 		wg_size_changed = false;
+
+		std::cout << "Done\n";
 	}
 }
 
@@ -151,7 +175,7 @@ cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, T* data
 
 template<typename T> void ConcatKernelID(T type, std::string& original) { original += "_INVALID"; }
 template<> void ConcatKernelID(int type, std::string& original) { original += "_INT"; }
-template<> void ConcatKernelID(double type, std::string& original) { original += "_DOUBLE"; }
+template<> void ConcatKernelID(float type, std::string& original) { original += "_FP"; }
 
 template<typename T>
 void Sum(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
@@ -236,8 +260,10 @@ void Variance(T*& inbuf, T*& outbuf, size_t& len, size_t original_len, T mean)
 }
 
 template<typename T>
-void Sort(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
+T* Sort(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
 {
+	unsigned long ex_time_total = 0, ex_time = 0, profiled_info[4] { 0, 0, 0, 0 };
+
 	std::string kernel_id = "bitonic_local";
 	ConcatKernelID(*inbuf, kernel_id);
 
@@ -245,6 +271,7 @@ void Sort(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
 	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	CheckResize(kernel, inbuf, len, original_len);
+
 	outbuf = new T[len];
 	size_t data_size = len * sizeof(T);
 
@@ -253,20 +280,44 @@ void Sort(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
 	kernel.setArg(2, cl::Local(local_size * sizeof(T)));
 	kernel.setArg(3, 0);
 
-	ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id.c_str());
+	CumulativeProfiledExecution(kernel, buffer_B, data_size, outbuf, len, ex_time_total, ex_time, profiled_info);
 
 	int i = 1;
 	while (!Sorted(outbuf, len))
 	{
 		buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, outbuf, data_size);
-		buffer_B = EnqueueBuffer(kernel, 1, CL_MEM_READ_WRITE, outbuf, data_size);
-		kernel.setArg(2, cl::Local(local_size * sizeof(T)));
 		kernel.setArg(3, (i++ % 2));
 
-		ProfiledExecution(kernel, buffer_B, data_size, outbuf, len, kernel_id.c_str());
+		CumulativeProfiledExecution(kernel, buffer_B, data_size, outbuf, len, ex_time_total, ex_time, profiled_info);
 	}
 
-	std::cout << timer::Stop(PROF_NS) << std::endl;
+	PrintProfilerInfo(kernel_id, ex_time, profiled_info, ex_time_total);
+	std::cout << "\n";
+	timer::Stop();
+
+	T* results = new T[original_len];
+	for (int i = 0; i < original_len; i++)
+		results[i] = outbuf[i];
+
+	return results;
+}
+
+int* sorted_array_int = nullptr;
+int* SortOptim(int*& A, int*& B, size_t& base_size, size_t original_size)
+{
+	if (!sorted_array_int)
+		sorted_array_int = Sort(A, B, base_size, original_size);
+
+	return sorted_array_int;
+}
+
+fp_type* sorted_array_fp = nullptr;
+fp_type* SortOptim(fp_type*& A, fp_type*& B, size_t& base_size, size_t original_size)
+{
+	if (!sorted_array_fp)
+		sorted_array_fp = Sort(A, B, base_size, original_size);
+
+	return sorted_array_fp;
 }
 
 #endif

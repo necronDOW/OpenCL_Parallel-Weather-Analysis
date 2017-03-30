@@ -87,7 +87,7 @@ class MenuSystem
 };
 
 MenuSystem* menu_system;
-inline void InitMenus()
+void InitMenus()
 {
 	menu_system = new MenuSystem();
 
@@ -96,7 +96,9 @@ inline void InitMenus()
 	menu_system->AddScreenOption(0, "Find Maximum");
 	menu_system->AddScreenOption(0, "Find Mean");
 	menu_system->AddScreenOption(0, "Find Standard Deviation");
-	menu_system->AddScreenOption(0, "Sort Data Set");
+	menu_system->AddScreenOption(0, "Find Median");
+	menu_system->AddScreenOption(0, "Find Upper Quartile");
+	menu_system->AddScreenOption(0, "Find Lower Quartile");
 	menu_system->AddScreenOption(0, "Toggle Work Group Size");
 	menu_system->AddScreenOption(0, "Choose Optimization Mode");
 	menu_system->AddScreenOption(0, "Exit");
@@ -165,14 +167,20 @@ inline void MainMenu(T*& A, T*& B, size_t& base_size, size_t original_size, bool
 			printf("Standard Deviation: %.3f\n\n", sqrt(B[0] / division));
 			break;
 		case 5:
-			Sort(A, B, base_size, original_size);
+			printf("Median: %.3f\n\n", source(SortOptim(A, B, base_size, original_size), original_size, 0.5) / division);
 			break;
 		case 6:
+			printf("Upper Quartile: %.3f\n\n", source(SortOptim(A, B, base_size, original_size), original_size, 0.75) / division);
+			break;
+		case 7:
+			printf("Lower Quartile: %.3f\n\n", source(SortOptim(A, B, base_size, original_size), original_size, 0.25) / division);
+			break;
+		case 8:
 			max_wg_size = !max_wg_size;
 			wg_size_changed = true;
 			printf("Work Group Size = %s\n\n", (max_wg_size) ? "MAX" : "MIN");
 			break;
-		case 7:
+		case 9:
 			OptimizeMenu();
 			printf("Optimize Mode = %s\n\n", (optimize_flag == Performance) ? "PERFORMANCE" : "PRECISION");
 			break;

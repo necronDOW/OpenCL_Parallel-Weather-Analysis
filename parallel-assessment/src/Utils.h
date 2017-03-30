@@ -205,13 +205,24 @@ enum ProfilingResolution {
 	PROF_NULL = -1
 };
 
-std::string GetFullProfilingInfo(const cl::Event& evnt, ProfilingResolution resolution) {
+unsigned long* GetFullProfilingInfoData(const cl::Event& evnt, ProfilingResolution resolution)
+{
+	return new unsigned long[4] {
+		(unsigned long)((evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution),
+		(unsigned long)((evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) / resolution),
+		(unsigned long)((evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>()) / resolution),
+		(unsigned long)((evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution)
+	};
+}
+
+std::string GetFullProfilingInfo(unsigned long* profiled_info)
+{
 	std::stringstream sstream;
 
-	sstream << "\n\tQueued " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
-	sstream << "\n\tSubmitted " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_SUBMIT>()) / resolution;
-	sstream << "\n\tExecuted " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_START>()) / resolution;
-	sstream << "\n\tTotal " << (evnt.getProfilingInfo<CL_PROFILING_COMMAND_END>() - evnt.getProfilingInfo<CL_PROFILING_COMMAND_QUEUED>()) / resolution;
+	sstream << "\n\tQueued " << profiled_info[0];
+	sstream << "\n\tSubmitted " << profiled_info[1];
+	sstream << "\n\tExecuted " << profiled_info[2];
+	sstream << "\n\tTotal " << profiled_info[3];
 
 	return sstream.str();
 }
