@@ -34,13 +34,13 @@ fp_type* convert(int* arr, size_t size, int multiplier)
 }
 
 template<typename T>
-T mean(T value, float size)
+T mean(T value, fp_type size)
 {
 	return value / size;
 }
 
 template<typename T>
-T source(const T* arr, int size, float indexer)
+T source(const T* arr, int size, fp_type indexer)
 {
 	int src_index = size * indexer;
 	return arr[src_index];
@@ -114,6 +114,8 @@ void ProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t arr_size, T*
 	unsigned long ex_time_total = timer::Stop(profiler_resolution);
 	unsigned long ex_time = prof_event.getProfilingInfo<CL_PROFILING_COMMAND_END>() - prof_event.getProfilingInfo<CL_PROFILING_COMMAND_START>();
 	PrintProfilerInfo(kernel_name, ex_time, GetFullProfilingInfoData(prof_event, profiler_resolution), ex_time_total);
+
+	queue.flush();
 }
 
 template<typename T>
@@ -129,6 +131,8 @@ void CumulativeProfiledExecution(cl::Kernel kernel, cl::Buffer buffer, size_t ar
 	unsigned long* this_profiled_info = GetFullProfilingInfoData(prof_event, profiler_resolution);
 	for (int i = 0; i < 4; i++)
 		profiled_info[i] += this_profiled_info[i];
+
+	queue.flush();
 }
 
 template<typename T>
@@ -176,6 +180,7 @@ cl::Buffer EnqueueBuffer(cl::Kernel kernel, int arg_index, int mem_mode, T* data
 template<typename T> void ConcatKernelID(T type, std::string& original) { original += "_INVALID"; }
 template<> void ConcatKernelID(int type, std::string& original) { original += "_INT"; }
 template<> void ConcatKernelID(float type, std::string& original) { original += "_FP"; }
+template<> void ConcatKernelID(double type, std::string& original) { original += "_FP"; }
 
 template<typename T>
 void Sum(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
@@ -187,7 +192,7 @@ void Sum(T*& inbuf, T*& outbuf, size_t& len, size_t original_len)
 	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	CheckResize(kernel, inbuf, len, original_len);
-	outbuf = new T[1];
+	outbuf = new T[1]{ 0 };
 	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
@@ -207,7 +212,7 @@ void LocalMinMax(T*& inbuf, T*& outbuf, size_t& len, size_t original_len, bool d
 	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	CheckResize(kernel, inbuf, len, original_len);
-	outbuf = new T[1];
+	outbuf = new T[1] { 0 };
 	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);
@@ -246,7 +251,7 @@ void Variance(T*& inbuf, T*& outbuf, size_t& len, size_t original_len, T mean)
 	cl::Kernel kernel = cl::Kernel(program, kernel_id.c_str());
 
 	CheckResize(kernel, inbuf, len, original_len);
-	outbuf = new T[1];
+	outbuf = new T[1] { 0 };
 	size_t data_size = len * sizeof(T);
 
 	cl::Buffer buffer_A = EnqueueBuffer(kernel, 0, CL_MEM_READ_ONLY, inbuf, data_size);

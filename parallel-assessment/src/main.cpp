@@ -88,7 +88,7 @@ inline void InitData(const char* dir, fp_type*& out_arr, size_t& out_size)
 int main(int argc, char **argv) {
 	int platform_id = 0;
 	int device_id = 0;
-	char* file_dir = "temp_lincolnshire.txt";
+	char* file_dir = "temp_lincolnshire_short.txt";
 
 	for (int i = 1; i < argc; i++)
 	{
@@ -119,11 +119,10 @@ int main(int argc, char **argv) {
 		bool finished = false;
 		while (!finished)
 		{
-			switch (optimize_flag)
-			{
-				case Performance: MainMenu(A, B, base_size, original_size, finished); break;
-				case Precision: MainMenu(A_f, B_f, base_size, original_size, finished); break;
-			}
+			if (optimize_flag == Performance)
+				MainMenu(A, B, base_size, original_size, finished);
+			else if (optimize_flag == Precision)
+				MainMenu(A_f, B_f, base_size, original_size, finished);
 		}
 	}
 	catch (cl::Error err) {

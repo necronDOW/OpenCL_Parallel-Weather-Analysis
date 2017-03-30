@@ -1,0 +1,64 @@
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 26336
+	Submitted 85472
+	Executed 13216
+	Total 125024
+Total execution time [ns]: 1744840
+13:32:50 30/3/2017
+
+Kernel (reduce_min_INT) execution time [ns]: 
+	Queued 28896
+	Submitted 117184
+	Executed 9152
+	Total 155232
+Total execution time [ns]: 1037151
+13:32:55 30/3/2017
+
+Kernel (reduce_max_global_INT) execution time [ns]: 
+	Queued 23360
+	Submitted 112960
+	Executed 13088
+	Total 149408
+Total execution time [ns]: 819648
+13:33:4 30/3/2017
+
+Kernel (reduce_max_INT) execution time [ns]: 
+	Queued 28544
+	Submitted 118112
+	Executed 8864
+	Total 155520
+Total execution time [ns]: 1161302
+13:33:6 30/3/2017
+
+Kernel (reduce_sum_INT) execution time [ns]: 
+	Queued 30272
+	Submitted 118432
+	Executed 8896
+	Total 157600
+Total execution time [ns]: 1213272
+13:33:6 30/3/2017
+
+Kernel (reduce_sum_INT) execution time [ns]: 
+	Queued 26816
+	Submitted 103648
+	Executed 8736
+	Total 139200
+Total execution time [ns]: 889262
+13:33:9 30/3/2017
+
+Kernel (sum_sqr_diff_INT) execution time [ns]: 
+	Queued 27392
+	Submitted 33504
+	Executed 8832
+	Total 69728
+Total execution time [ns]: 654435
+13:33:9 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 772320
+	Submitted 1092096
+	Executed 1575904
+	Total 3440320
+Total execution time [ns]: 10872606
+13:33:15 30/3/2017
+

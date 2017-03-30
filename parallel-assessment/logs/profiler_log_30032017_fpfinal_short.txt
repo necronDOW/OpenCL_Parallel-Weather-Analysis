@@ -1,0 +1,64 @@
+Kernel (reduce_min_global_FP) execution time [ns]: 
+	Queued 25536
+	Submitted 105536
+	Executed 69824
+	Total 200896
+Total execution time [ns]: 2942392
+13:33:44 30/3/2017
+
+Kernel (reduce_min_FP) execution time [ns]: 
+	Queued 27712
+	Submitted 115968
+	Executed 18816
+	Total 162496
+Total execution time [ns]: 1075968
+13:33:46 30/3/2017
+
+Kernel (reduce_max_global_FP) execution time [ns]: 
+	Queued 24032
+	Submitted 112832
+	Executed 53088
+	Total 189952
+Total execution time [ns]: 853011
+13:33:48 30/3/2017
+
+Kernel (reduce_max_FP) execution time [ns]: 
+	Queued 27520
+	Submitted 109952
+	Executed 15968
+	Total 153440
+Total execution time [ns]: 1112860
+13:33:49 30/3/2017
+
+Kernel (reduce_sum_FP) execution time [ns]: 
+	Queued 27392
+	Submitted 111392
+	Executed 354016
+	Total 492800
+Total execution time [ns]: 1471517
+13:33:50 30/3/2017
+
+Kernel (reduce_sum_FP) execution time [ns]: 
+	Queued 27680
+	Submitted 107712
+	Executed 361728
+	Total 497120
+Total execution time [ns]: 1396129
+13:33:51 30/3/2017
+
+Kernel (sum_sqr_diff_FP) execution time [ns]: 
+	Queued 27744
+	Submitted 107040
+	Executed 366336
+	Total 501120
+Total execution time [ns]: 1200119
+13:33:51 30/3/2017
+
+Kernel (bitonic_local_FP) execution time [ns]: 
+	Queued 783776
+	Submitted 824800
+	Executed 1649952
+	Total 3258528
+Total execution time [ns]: 9898652
+13:33:54 30/3/2017
+

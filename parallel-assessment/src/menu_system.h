@@ -113,7 +113,7 @@ void InitMenus()
 }
 
 template<typename T>
-void MinMaxMenu(T*& A, T*& B, size_t& base_size, size_t original_size, double division, bool dir)
+void MinMaxMenu(T*& A, T*& B, size_t& base_size, size_t original_size, fp_type division, bool dir)
 {
 	menu_system->ShowScreen(1);
 
@@ -146,10 +146,10 @@ void OptimizeMenu()
 }
 
 template<typename T>
-inline void MainMenu(T*& A, T*& B, size_t& base_size, size_t original_size, bool& finished)
+void MainMenu(T*& A, T*& B, size_t& base_size, size_t original_size, bool& finished)
 {
 	menu_system->ShowScreen(0);
-	double division = (typeid(T) == typeid(int)) ? 10.0 : 1.0;
+	fp_type division = (typeid(T) == typeid(int)) ? 10.0 : 1.0;
 
 	int selection = menu_system->GetScreenOptionSelection();
 	switch (selection)
