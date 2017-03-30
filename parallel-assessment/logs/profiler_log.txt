@@ -438,3 +438,43 @@ Kernel (bitonic_local_FP) execution time [ns]:
 Total execution time [ns]: 2916845837
 8:3:50 30/3/2017
 
+Kernel (reduce_min_global_INT) execution time [ns]: 
+	Queued 28032
+	Submitted 202592
+	Executed 1151968
+	Total 1382592
+Total execution time [ns]: 11670224
+11:48:36 30/3/2017
+
+Kernel (reduce_sum_INT) execution time [ns]: 
+	Queued 24800
+	Submitted 114368
+	Executed 596512
+	Total 735680
+Total execution time [ns]: 3251437
+11:48:44 30/3/2017
+
+Kernel (reduce_sum_INT) execution time [ns]: 
+	Queued 24736
+	Submitted 77984
+	Executed 595264
+	Total 697984
+Total execution time [ns]: 3218122
+11:48:47 30/3/2017
+
+Kernel (sum_sqr_diff_INT) execution time [ns]: 
+	Queued 24416
+	Submitted 81280
+	Executed 631360
+	Total 737056
+Total execution time [ns]: 2902214
+11:48:47 30/3/2017
+
+Kernel (bitonic_local_INT) execution time [ns]: 
+	Queued 99624864
+	Submitted 168846144
+	Executed 3276414752
+	Total 3544885760
+Total execution time [ns]: 3485933770
+11:49:38 30/3/2017
+
